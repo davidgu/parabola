@@ -21,9 +21,7 @@ void get_fps(VideoCapture cap){
 
   // Time capturing specified number of frames
   time(&start);
-  for(int i = 0; i < num_frames; i++)
-  {
-    //cap >> frame;
+  for(int i = 0; i < num_frames; i++){
     cap.read(frame);
   }
   time(&end);
@@ -74,7 +72,6 @@ void test_write_speed(VideoCapture cap){
 
 void process_frame(VideoCapture cap, Tracker* tracker){
   Mat frame;
-  //cap>>frame;
   cap.read(frame);
   Rect2d bbox(287, 23, 86, 320);
   // If tracking is successful, draw the bounding box
@@ -104,7 +101,6 @@ int main(int argc, char** argv){
   // Initialize tracking and display bounding box
   Mat frame;
   cap.read(frame);
-  //cap >> frame;
   Rect2d bbox(287, 23, 86, 320); 
   rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 ); 
   tracker->init(frame, bbox);
@@ -117,13 +113,13 @@ int main(int argc, char** argv){
       std::thread t2(process_frame,cap,tracker);
       t2.detach();
     }else{
-      //cap >> frame;
       cap.read(frame);
 
       // If tracking is successful, draw the bounding box
       bool ok = tracker->update(frame, bbox);
       if(ok){
         rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 );
+        printf("x: %f y: %f",bbox.x, bbox.y);
       }
       else{
         std::cout << "Tracking failure!" << std::endl;
