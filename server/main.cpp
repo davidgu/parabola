@@ -23,7 +23,8 @@ void get_fps(VideoCapture cap){
   time(&start);
   for(int i = 0; i < num_frames; i++)
   {
-    cap >> frame;
+    //cap >> frame;
+    cap.read(frame);
   }
   time(&end);
 
@@ -53,10 +54,28 @@ Ptr<Tracker> get_tracker(std::string trackerType){
     tracker = TrackerCSRT::create();
   return tracker;
 }
+// this test shows me that read is faster
+void test_write_speed(VideoCapture cap){
+  Mat stream_test;
+  Mat read_test;
+
+  time_t start1, end1, start2, end2;
+  time(&start1);
+  cap>>stream_test;
+  time(&end1);
+  time(&start2);
+  cap.read(read_test);
+  time(&end2);
+  std::printf("%f\n",difftime(end1,start1));
+  std::printf("%f\n",difftime(end2,start2));
+
+}
+
 
 void process_frame(VideoCapture cap, Tracker* tracker){
   Mat frame;
-  cap>>frame;
+  //cap>>frame;
+  cap.read(frame);
   Rect2d bbox(287, 23, 86, 320);
   // If tracking is successful, draw the bounding box
   bool ok = tracker->update(frame, bbox);
@@ -84,7 +103,8 @@ int main(int argc, char** argv){
 
   // Initialize tracking and display bounding box
   Mat frame;
-  cap >> frame;
+  cap.read(frame);
+  //cap >> frame;
   Rect2d bbox(287, 23, 86, 320); 
   rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 ); 
   tracker->init(frame, bbox);
@@ -92,11 +112,13 @@ int main(int argc, char** argv){
 
   while(true){
     if( waitKey(10) == 27 ) break; // stop capturing by pressing ESC
+    //test_write_speed(cap);
     if(USE_THREADS){
       std::thread t2(process_frame,cap,tracker);
       t2.detach();
     }else{
-      cap >> frame;
+      //cap >> frame;
+      cap.read(frame);
 
       // If tracking is successful, draw the bounding box
       bool ok = tracker->update(frame, bbox);
