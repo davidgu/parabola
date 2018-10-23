@@ -85,6 +85,9 @@ void process_frame(VideoCapture cap, Ptr<Tracker> tracker, Rect2d bbox){
   if(ok){
     rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 );
     printf("x: %f y: %f",bbox.x, bbox.y);
+    // TODO: Determine which dimensions each camera is responsible for watching
+    // TODO: Determine how to resolve conflicts between cameras
+    // TODO: Write data to shared framebuffer
   }
   else{
     std::cout << "Tracking failure!" << std::endl;
