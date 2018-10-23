@@ -10,7 +10,7 @@ const int CAMERA_2 = 1;
 const int CAMERA_3 = 2;
 
 const std::string trackerList[8] = {"BOOSTING", "MIL", "KCF", "TLD","MEDIANFLOW", "GOTURN", "MOSSE", "CSRT"};
-const int trackerSelection = 2;
+const int trackerSelection = 4;
 
 double get_fps(VideoCapture cap){
     int num_frames = 120;
@@ -62,11 +62,29 @@ int main(int argc, char** argv){
 
   std::cout << "FPS: " << get_fps(cap) << std::endl;
 
+  Ptr<Tracker> tracker = get_tracker(trackerList[trackerSelection]);
+
+  // Initialize tracking and display bounding box
+  Mat frame;
+  cap >> frame;
+  Rect2d bbox(287, 23, 86, 320); 
+  rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 ); 
+  tracker->init(frame, bbox);
+  imshow("Tracking", frame);
+
   while(true){
-    Mat frame;
     cap >> frame;
-    if( frame.empty() ) break; // end of video stream
-    imshow("this is you, smile! :)", frame);
+
+    // If tracking is successful, draw the bounding box
+    bool ok = tracker->update(frame, bbox);
+    if(ok){
+      rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 );
+    }
+    else{
+      std::cout << "Tracking failure!" << std::endl;
+    }
+
+    imshow("Tracking", frame);
     if( waitKey(10) == 27 ) break; // stop capturing by pressing ESC
   }
   // the camera will be closed automatically upon exit
