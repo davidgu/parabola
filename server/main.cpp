@@ -9,12 +9,12 @@ using namespace cv;
 const int CAMERA_1 = 0;
 const int CAMERA_2 = 1;
 const int CAMERA_3 = 2;
-const int USE_THREADS = 0;
+const int MULTITHREAD = 0;
 
 const std::string trackerList[8] = {"BOOSTING", "MIL", "KCF", "TLD","MEDIANFLOW", "GOTURN", "MOSSE", "CSRT"};
 const int trackerSelection = 4;
 
-void get_fps(VideoCapture cap){
+double get_fps(VideoCapture cap){
   int num_frames = 120;
   time_t start, end;
   Mat frame;
@@ -28,7 +28,7 @@ void get_fps(VideoCapture cap){
 
   // Calculate FPS
   double seconds = difftime (end, start);
-  std::cout<< "FPS: " << num_frames / seconds << std::endl;
+  return num_frames / seconds;
 }
 
 Ptr<Tracker> get_tracker(std::string trackerType){
@@ -52,7 +52,9 @@ Ptr<Tracker> get_tracker(std::string trackerType){
     tracker = TrackerCSRT::create();
   return tracker;
 }
-// this test shows me that read is faster
+
+// Comparasion of speed between >> and .read
+// .read is faster
 void test_write_speed(VideoCapture cap){
   Mat stream_test;
   Mat read_test;
@@ -66,24 +68,21 @@ void test_write_speed(VideoCapture cap){
   time(&end2);
   std::printf("%f\n",difftime(end1,start1));
   std::printf("%f\n",difftime(end2,start2));
-
 }
 
-
-void process_frame(VideoCapture cap, Tracker* tracker){
+void process_frame(VideoCapture cap, Ptr<Tracker> tracker, Rect2d bbox){
   Mat frame;
   cap.read(frame);
-  Rect2d bbox(287, 23, 86, 320);
+
   // If tracking is successful, draw the bounding box
   bool ok = tracker->update(frame, bbox);
   if(ok){
     rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 );
+    printf("x: %f y: %f",bbox.x, bbox.y);
   }
   else{
     std::cout << "Tracking failure!" << std::endl;
   }
-
-  imshow("Tracking", frame);
 }
 
 int main(int argc, char** argv){
@@ -94,32 +93,32 @@ int main(int argc, char** argv){
   cap.set(CV_CAP_PROP_FRAME_WIDTH,640);
   cap.set(CV_CAP_PROP_FRAME_HEIGHT,480);
 
-  std::thread t1 (get_fps,cap);
-
   Ptr<Tracker> tracker = get_tracker(trackerList[trackerSelection]);
-
-  // Initialize tracking and display bounding box
-  Mat frame;
-  cap.read(frame);
   Rect2d bbox(287, 23, 86, 320); 
-  rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 ); 
-  tracker->init(frame, bbox);
-  imshow("Tracking", frame);
 
-  while(true){
-    if( waitKey(10) == 27 ) break; // stop capturing by pressing ESC
-    //test_write_speed(cap);
-    if(USE_THREADS){
-      std::thread t2(process_frame,cap,tracker);
-      t2.detach();
-    }else{
+  // If multithread is enabled, each camera view will be read by an independent
+  // thread, and processed data will be written to shared memory.
+  if(MULTITHREAD){
+    std::thread c1(process_frame,cap,tracker,bbox);
+    std::thread c2(process_frame,cap,tracker,bbox);
+    std::thread c3(process_frame,cap,tracker,bbox);
+  }
+  else{
+    Mat frame;
+    cap.read(frame);
+    rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 ); 
+    tracker->init(frame, bbox);
+    imshow("Tracking", frame);
+
+    while(true){
+      if( waitKey(10) == 27 ) break; // stop capturing by pressing ESC
       cap.read(frame);
 
       // If tracking is successful, draw the bounding box
       bool ok = tracker->update(frame, bbox);
       if(ok){
         rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 );
-        printf("x: %f y: %f",bbox.x, bbox.y);
+        printf("x: %f y: %f\n",bbox.x, bbox.y);
       }
       else{
         std::cout << "Tracking failure!" << std::endl;
@@ -128,8 +127,5 @@ int main(int argc, char** argv){
       imshow("Tracking", frame);
     }
   }
-  // the camera will be closed automatically upon exit
-  // cap.close();
-  t1.join();
   return 0;
 }
