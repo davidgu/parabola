@@ -1,4 +1,5 @@
 #include <queue>
+#include <exception>
 
 struct Vector3{
   double x, y, z;
@@ -8,25 +9,47 @@ struct Vector3{
     z = c;
   }
 };
-std::queue<double> x_loc;
-std::queue<double> y_loc;
-std::queue<double> z_loc;
 
-void update_pos(double val, int idx){ // 0 = x, 1 = y, 2 = z
-  if(val == 0){
-    x_loc.push(val);
-  }else if(val == 1){
-    y_loc.push(val);
-  }else{
-    z_loc.push(val);
-  }
+class FrameBuffer{
+  private:
+    std::queue<double> x_loc;
+    std::queue<double> y_loc;
+    std::queue<double> z_loc;
 
-  if(!x_loc.empty() && !y_loc.empty() && z_loc.empty()){
-    int cur_x = x_loc.pop();
-    int cur_y = y_loc.pop();
-    int cur_z = z_loc.pop();
-  }
-}
+  public:
+    void update_pos(double val, int dimension){ // 0 = x, 1 = y, 2 = z
+      if(dimension == 0){
+        x_loc.push(val);
+      }
+      else if(dimension == 1){
+        y_loc.push(val);
+      }
+      else if(dimension == 2){
+        z_loc.push(val);
+      }
+      // Something has gone badly wrong
+      else{
+        throw std::invalid_argument("Dimension must be 0, 1, or 2!");
+      }
+    }
 
-int main(){
-}
+    // Call this method before attempting to get_pos()
+    bool buffer_empty(){
+      return x_loc.empty() || y_loc.empty() || z_loc.empty();
+    }
+
+    Vector3 get_pos(){
+      if(buffer_empty()){
+        int x = x_loc.front();
+        int y = y_loc.front();
+        int z = z_loc.front();
+        x_loc.pop();
+        y_loc.pop();
+        z_loc.pop();
+        return Vector3(x, y, z);
+      }
+      else{
+        throw std::runtime_error("Cannot get pos when buffer is empty!");
+      }
+    }
+};
