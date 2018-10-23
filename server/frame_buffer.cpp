@@ -1,5 +1,13 @@
 #include <queue>
 
+struct Vector3{
+  double x, y, z;
+  Vector3(double a, double b, double c){
+    x = a;
+    y = b;
+    z = c;
+  }
+};
 std::queue<double> x_loc;
 std::queue<double> y_loc;
 std::queue<double> z_loc;
