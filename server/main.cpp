@@ -2,6 +2,7 @@
 #include "opencv2/tracking.hpp"
 #include <iostream>
 #include <time.h>
+#include <thread>
 
 using namespace cv;
 
@@ -12,7 +13,7 @@ const int CAMERA_3 = 2;
 const std::string trackerList[8] = {"BOOSTING", "MIL", "KCF", "TLD","MEDIANFLOW", "GOTURN", "MOSSE", "CSRT"};
 const int trackerSelection = 4;
 
-double get_fps(VideoCapture cap){
+void get_fps(VideoCapture cap){
     int num_frames = 120;
     time_t start, end;
     Mat frame;
@@ -27,7 +28,7 @@ double get_fps(VideoCapture cap){
      
     // Calculate FPS
     double seconds = difftime (end, start);
-    return num_frames / seconds;
+    std::cout<< "FPS: " << num_frames / seconds << std::endl;
 }
 
 Ptr<Tracker> get_tracker(std::string trackerType){
@@ -60,7 +61,7 @@ int main(int argc, char** argv){
   cap.set(CV_CAP_PROP_FRAME_WIDTH,640);
   cap.set(CV_CAP_PROP_FRAME_HEIGHT,480);
 
-  std::cout << "FPS: " << get_fps(cap) << std::endl;
+  std::thread t1 (get_fps,cap);
 
   Ptr<Tracker> tracker = get_tracker(trackerList[trackerSelection]);
 
@@ -89,5 +90,6 @@ int main(int argc, char** argv){
   }
   // the camera will be closed automatically upon exit
   // cap.close();
+  t1.join();
   return 0;
 }
