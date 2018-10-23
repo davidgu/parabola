@@ -1,8 +1,11 @@
-#include "opencv2/opencv.hpp"
-#include "opencv2/tracking.hpp"
 #include <iostream>
 #include <time.h>
 #include <thread>
+
+#include "opencv2/opencv.hpp"
+#include "opencv2/tracking.hpp"
+
+#include "framebuffer.h"
 
 using namespace cv;
 
