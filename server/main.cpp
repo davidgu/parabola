@@ -6,6 +6,7 @@
 #include "opencv2/tracking.hpp"
 
 #include "framebuffer.h"
+#include "vector3.h"
 
 using namespace cv;
 
@@ -16,6 +17,8 @@ const int MULTITHREAD = 0;
 
 const std::string trackerList[8] = {"BOOSTING", "MIL", "KCF", "TLD","MEDIANFLOW", "GOTURN", "MOSSE", "CSRT"};
 const int trackerSelection = 4;
+
+FrameBuffer frameBuffer;
 
 double get_fps(VideoCapture cap){
   int num_frames = 120;
@@ -105,6 +108,12 @@ int main(int argc, char** argv){
     std::thread c1(process_frame,cap,tracker,bbox);
     std::thread c2(process_frame,cap,tracker,bbox);
     std::thread c3(process_frame,cap,tracker,bbox);
+
+    // Read position data from shared FrameBuffer and prepare data to be sent
+    // to AR client
+    while(true){
+
+    }
   }
   else{
     Mat frame;
