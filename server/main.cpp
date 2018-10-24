@@ -5,12 +5,12 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/tracking.hpp"
 
+#include "vector3.h" // please import this first cause framebuffer needs this
 #include "framebuffer.h"
-#include "vector3.h"
 
 using namespace cv;
 
-const int CAMERA_1 = 0;
+const int CAMERA_1 = 0; // cam 0 is the webcam
 const int CAMERA_2 = 1;
 const int CAMERA_3 = 2;
 const int MULTITHREAD = 0;
@@ -76,6 +76,26 @@ void test_write_speed(VideoCapture cap){
   std::printf("%f\n",difftime(end2,start2));
 }
 
+bool custom_process_frame(VideoCapture cap){
+  if( waitKey(10) == 27 ) return 1; // stop capturing by pressing ESC
+  Mat frame;
+  cap.read(frame);
+
+  Mat lower_red_hue_range;
+  Mat upper_red_hue_range;
+  //inRange(frame, Scalar(0, 100, 100), Scalar(10, 255, 255), lower_red_hue_range);
+  inRange(frame, Scalar(10, 20, 20), Scalar(180, 40, 40), upper_red_hue_range);
+
+  Mat red_hue_image = upper_red_hue_range;
+  //addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_image);
+  //GaussianBlur(red_hue_image, red_hue_image, Size(9, 9), 2, 2);
+
+  imshow("Tracking", red_hue_image);
+  /* std::vector<Vec3f> circles;
+     HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows/8, 100, 20, 0, 0);*/
+  return 0;
+}
+
 void process_frame(VideoCapture cap, Ptr<Tracker> tracker, Rect2d bbox){
   Mat frame;
   cap.read(frame);
@@ -92,6 +112,7 @@ void process_frame(VideoCapture cap, Ptr<Tracker> tracker, Rect2d bbox){
   else{
     std::cout << "Tracking failure!" << std::endl;
   }
+  imshow("Tracking", frame);
 }
 
 int main(int argc, char** argv){
@@ -124,8 +145,11 @@ int main(int argc, char** argv){
     rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 ); 
     tracker->init(frame, bbox);
     imshow("Tracking", frame);
-
     while(true){
+      /*if(custom_process_frame(cap)){
+        break;
+        }*/
+
       if( waitKey(10) == 27 ) break; // stop capturing by pressing ESC
       cap.read(frame);
 
@@ -138,7 +162,6 @@ int main(int argc, char** argv){
       else{
         std::cout << "Tracking failure!" << std::endl;
       }
-
       imshow("Tracking", frame);
     }
   }
