@@ -26,7 +26,7 @@ bool FrameBuffer::buffer_empty(){
 }
 
 Vector3 FrameBuffer::get_pos(){
-  if(buffer_empty()){
+  if(!buffer_empty()){
     double x = x_loc.front();
     double y = y_loc.front();
     double z = z_loc.front();
