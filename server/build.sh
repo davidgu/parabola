@@ -1,1 +1,1 @@
-clang++ -std=c++11 $(pkg-config --cflags --libs opencv) main.cpp -o main.o
+clang++ -std=c++11 -Ofast -march=native $(pkg-config --cflags --libs opencv) *.cpp -o main.o
