@@ -7,7 +7,9 @@
 
 #include "vector3.h"
 #include "framebuffer.h"
+
 #define ll long long
+
 using namespace cv;
 
 const int CAMERA_1 = 0; // cam 0 is the webcam
