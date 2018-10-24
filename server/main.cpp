@@ -7,7 +7,7 @@
 
 #include "vector3.h" // please import this first cause framebuffer needs this
 #include "framebuffer.h"
-
+#define ll long long
 using namespace cv;
 
 const int CAMERA_1 = 0; // cam 0 is the webcam
@@ -65,15 +65,15 @@ void test_write_speed(VideoCapture cap){
   Mat stream_test;
   Mat read_test;
 
-  time_t start1, end1, start2, end2;
-  time(&start1);
+  struct timespec start1, end1, start2, end2;
+  clock_gettime(CLOCK_MONOTONIC, &start1);
   cap>>stream_test;
-  time(&end1);
-  time(&start2);
+  clock_gettime(CLOCK_MONOTONIC,&end1);
+  clock_gettime(CLOCK_MONOTONIC,&start2);
   cap.read(read_test);
-  time(&end2);
-  std::printf("%f\n",difftime(end1,start1));
-  std::printf("%f\n",difftime(end2,start2));
+  clock_gettime(CLOCK_MONOTONIC,&end2);
+  std::printf("%lld\n",((ll)end1.tv_nsec) - ((ll)start1.tv_nsec));
+  std::printf("%lld\n",((ll)end2.tv_nsec) - ((ll)start2.tv_nsec));
 }
 
 bool custom_process_frame(VideoCapture cap){
