@@ -5,7 +5,7 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/tracking.hpp"
 
-#include "vector3.h" // please import this first cause framebuffer needs this
+#include "vector3.h"
 #include "framebuffer.h"
 #define ll long long
 using namespace cv;
