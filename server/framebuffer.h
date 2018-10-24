@@ -1,3 +1,8 @@
+#ifndef FRAMEBUFFER_H
+#define FRAMEBUFFER_H
+
+#include "vector3.h"
+
 class FrameBuffer{
   private:
     std::queue<double> x_loc;
@@ -9,3 +14,5 @@ class FrameBuffer{
     bool buffer_empty();
     Vector3 get_pos();
 };
+
+#endif
