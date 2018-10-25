@@ -63,19 +63,26 @@ Ptr<Tracker> get_tracker(std::string trackerType){
 
 // Comparasion of speed between >> and .read
 // .read is faster
+
+long timediff(clock_t t1, clock_t t2) {
+  long elapsed;
+  elapsed = ((double)t2 - t1) / CLOCKS_PER_SEC * 1000;
+  return elapsed;
+}
+
 void test_write_speed(VideoCapture cap){
   Mat stream_test;
   Mat read_test;
 
-  struct timespec start1, end1, start2, end2;
-  clock_gettime(CLOCK_MONOTONIC, &start1);
+  clock_t start1, end1, start2, end2;
+  start1 = clock();
   cap>>stream_test;
-  clock_gettime(CLOCK_MONOTONIC,&end1);
-  clock_gettime(CLOCK_MONOTONIC,&start2);
+  end1 = clock();
+  start2 = clock();
   cap.read(read_test);
-  clock_gettime(CLOCK_MONOTONIC,&end2);
-  std::printf("%lld\n",((ll)end1.tv_nsec) - ((ll)start1.tv_nsec));
-  std::printf("%lld\n",((ll)end2.tv_nsec) - ((ll)start2.tv_nsec));
+  end2 = clock();
+  std::printf("%ld\n",timediff(start1, end1));
+  std::printf("%ld\n",timediff(start2, end2));
 }
 
 bool custom_process_frame(VideoCapture cap){
