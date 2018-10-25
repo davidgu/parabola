@@ -25,14 +25,19 @@ int main(int argc, char** argv){
   clock_t start_time, cur_time;
   start_time = clock();
   cur_time = clock();
-  Mat frame;
-  while(timediff(start_time, cur_time) <= cap_duration){
+  Mat frames[1000];
+  int frame_count = 0;
+  std::cout<<"capturing frames"<<std::endl;
+  while(timediff(start_time, cur_time) <= cap_duration && frame_count < 1000){
     //if( waitKey(10) == 27 ) break; // stop capturing by pressing ESC 
-    std::cout<<cur_time<<std::endl;
     waitKey(10);
-    cap.read(frame);
-    imshow("capturing",frame);
+    cap.read(frames[frame_count]);
+    frame_count++;
     cur_time = clock();
+  }
+  std::cout<<"saving frames"<<std::endl;
+  for(int i = 0; i < frame_count;i++){
+    imwrite("photos/" + std::to_string(i) + ".jpg", frames[i]);
   }
 
   return 0; 
