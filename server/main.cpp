@@ -87,19 +87,42 @@ void test_write_speed(VideoCapture cap){
 
 bool custom_process_frame(VideoCapture cap){
   if( waitKey(10) == 27 ) return 1; // stop capturing by pressing ESC
+
+  //read input
   Mat frame;
   cap.read(frame);
 
-  Mat lower_red_hue_range;
-  Mat upper_red_hue_range;
-  //inRange(frame, Scalar(0, 100, 100), Scalar(10, 255, 255), lower_red_hue_range);
-  inRange(frame, Scalar(10, 20, 20), Scalar(180, 40, 40), upper_red_hue_range);
+  //scale colour channels
+  //this is bgr NOT rgb
+  Mat channels[3];
+  split(frame,channels);  // planes[2] is the red channel
+  channels[0]*=0.9; //blue
+  channels[1]*=0.5; //green
+  channels[2]*=0.6; //red
+  Mat img;
+  merge(channels,3, img);
 
-  Mat red_hue_image = upper_red_hue_range;
-  //addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_image);
+  //mess with contrast
+  Mat imageContrastHigh4;
+  img.convertTo(imageContrastHigh4, -1, 2.5, 0); //increase the contrast by 4
+
+  //mess with brightness
+  Mat brightness;
+  brightness = imageContrastHigh4 +  Scalar(-100, -100, -100);
+  Mat output_img;
+  //GaussianBlur(brightness,output_img, Size(9, 9), 2, 2);
+  //imshow("Tracking",output_img);
+  imshow("Tracking",brightness);
+
+
+  //Mat hue_range;
+  //inRange(brightness, Scalar(55, 200, 100), Scalar(255, 255, 255), hue_range);
+/*
+  // Mat hue_image;
+  //addWeighted(lower_hue_range, 1.0, upper_hue_range, 1.0, 0.0, hue_image);
   //GaussianBlur(red_hue_image, red_hue_image, Size(9, 9), 2, 2);
-
-  imshow("Tracking", red_hue_image);
+*/
+  //imshow("Tracking", imageContrastHigh4);
   /* std::vector<Vec3f> circles;
      HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows/8, 100, 20, 0, 0);*/
   return 0;
@@ -126,11 +149,13 @@ void process_frame(VideoCapture cap, Ptr<Tracker> tracker, Rect2d bbox){
 
 int main(int argc, char** argv){
   VideoCapture cap;
-  if(!cap.open(CAMERA_1))
+  if(!cap.open(CAMERA_2))
     return 0;
 
   cap.set(CV_CAP_PROP_FRAME_WIDTH,640);
   cap.set(CV_CAP_PROP_FRAME_HEIGHT,480);
+  cap.set(CV_CAP_PROP_AUTOFOCUS, 0);
+  cap.set(CV_CAP_PROP_EXPOSURE, 0);
 
   Ptr<Tracker> tracker = get_tracker(trackerList[trackerSelection]);
   Rect2d bbox(287, 23, 86, 320); 
@@ -157,19 +182,19 @@ int main(int argc, char** argv){
     while(true){
       /*if(custom_process_frame(cap)){
         break;
-        }*/
+      }*/
 
-      if( waitKey(10) == 27 ) break; // stop capturing by pressing ESC
-      cap.read(frame);
+       if( waitKey(10) == 27 ) break; // stop capturing by pressing ESC
+         cap.read(frame);
 
       // If tracking is successful, draw the bounding box
       bool ok = tracker->update(frame, bbox);
       if(ok){
-        rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 );
-        printf("x: %f y: %f\n",bbox.x, bbox.y);
+      rectangle(frame, bbox, Scalar( 255, 0, 0 ), 2, 1 );
+      printf("x: %f y: %f\n",bbox.x, bbox.y);
       }
       else{
-        std::cout << "Tracking failure!" << std::endl;
+      std::cout << "Tracking failure!" << std::endl;
       }
       imshow("Tracking", frame);
     }
