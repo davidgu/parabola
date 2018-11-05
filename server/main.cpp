@@ -85,46 +85,95 @@ void test_write_speed(VideoCapture cap){
   std::printf("%ld\n",timediff(start2, end2));
 }
 
-bool custom_process_frame(VideoCapture cap){
+bool detect_cones(VideoCapture cap){
   if( waitKey(10) == 27 ) return 1; // stop capturing by pressing ESC
-
+//https://anikettatipamula.blogspot.com/2012/12/ball-tracking-detection-using-opencv.html
   //read input
   Mat frame;
   cap.read(frame);
 
+  Mat hsv;
+  //note hsv range is from [0,179], [0,255], [0,255] (Hue, Saturation, Value)
+  cvtColor(frame, hsv, CV_BGR2HSV);
+  Scalar orange_lower(2,200,200); // try 5 and 10 for the first index . that works pretty well
+  Scalar orange_upper(18,255,255);
+  
+  //Scalar purple_lower(5,200,200);
+  //Scalar purple_upper(30,255,255);
+
+  Mat orange_mask;
+  inRange(hsv, orange_lower, orange_upper,orange_mask);
+
+
+  Mat final_image;
+  orange_mask.convertTo(final_image, -1, 2, 0); //increase the contrast by the middle number
+  
+  imshow("Tracking",final_image);
+
+
+
+  /*
   //scale colour channels
   //this is bgr NOT rgb
   Mat channels[3];
   split(frame,channels);  // planes[2] is the red channel
-  channels[0]*=0.9; //blue
-  channels[1]*=0.5; //green
-  channels[2]*=0.6; //red
+  //channels[0]*=0.9; //blue
+  //channels[1]*=0.5; //green
+  //channels[2]*=0.6; //red
   Mat img;
   merge(channels,3, img);
 
   //mess with contrast
   Mat imageContrastHigh4;
-  img.convertTo(imageContrastHigh4, -1, 2.5, 0); //increase the contrast by 4
+  frame.convertTo(imageContrastHigh4, -1, 2, 0); //increase the contrast by 4
 
   //mess with brightness
-  Mat brightness;
-  brightness = imageContrastHigh4 +  Scalar(-100, -100, -100);
+  //Mat brightness;
+  //brightness = imageContrastHigh4 +  Scalar(-100, -100, -100);
   Mat output_img;
   //GaussianBlur(brightness,output_img, Size(9, 9), 2, 2);
   //imshow("Tracking",output_img);
-  imshow("Tracking",brightness);
+  //inRange(brightness, Scalar(55, 200, 100), Scalar(255, 255, 255), hue_range);
+
+*/
 
 
   //Mat hue_range;
-  //inRange(brightness, Scalar(55, 200, 100), Scalar(255, 255, 255), hue_range);
-/*
+  /*
   // Mat hue_image;
   //addWeighted(lower_hue_range, 1.0, upper_hue_range, 1.0, 0.0, hue_image);
   //GaussianBlur(red_hue_image, red_hue_image, Size(9, 9), 2, 2);
-*/
+  */
   //imshow("Tracking", imageContrastHigh4);
   /* std::vector<Vec3f> circles;
      HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows/8, 100, 20, 0, 0);*/
+  return 0;
+}
+bool custom_process_frame(VideoCapture cap){
+  if( waitKey(10) == 27 ) return 1; // stop capturing by pressing ESC
+  Mat frame;
+  cap.read(frame);
+
+  Mat hsv;
+  //note hsv range is from [0,179], [0,255], [0,255] (Hue, Saturation, Value)
+  cvtColor(frame, hsv, CV_BGR2HSV);
+  
+  Scalar purple_lower(0,140,100); // I find that the ball doesn't really respond to the middle number. it is so high just to filter out the other colours
+  Scalar purple_upper(10,255,255);
+
+  Mat purple_mask;
+  inRange(hsv, purple_lower, purple_upper, purple_mask);
+
+  Mat final_image;
+  purple_mask.convertTo(final_image, -1, 2, 0); //increase the contrast by the middle number
+  
+  imshow("Tracking",final_image);
+
+  Mat channels[3];
+  split(frame,channels);  // planes[2] is the red channel
+  //imshow("Tracking",channels[0]);
+
+
   return 0;
 }
 
@@ -180,11 +229,11 @@ int main(int argc, char** argv){
     tracker->init(frame, bbox);
     imshow("Tracking", frame);
     while(true){
-      /*if(custom_process_frame(cap)){
+      if(custom_process_frame(cap)){
         break;
-      }*/
-
-       if( waitKey(10) == 27 ) break; // stop capturing by pressing ESC
+      }
+      /*
+         if( waitKey(10) == 27 ) break; // stop capturing by pressing ESC
          cap.read(frame);
 
       // If tracking is successful, draw the bounding box
@@ -196,7 +245,7 @@ int main(int argc, char** argv){
       else{
       std::cout << "Tracking failure!" << std::endl;
       }
-      imshow("Tracking", frame);
+      imshow("Tracking", frame);*/
     }
   }
   return 0;
