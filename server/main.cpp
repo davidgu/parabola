@@ -87,7 +87,7 @@ void test_write_speed(VideoCapture cap){
 
 bool detect_cones(VideoCapture cap){
   if( waitKey(10) == 27 ) return 1; // stop capturing by pressing ESC
-//https://anikettatipamula.blogspot.com/2012/12/ball-tracking-detection-using-opencv.html
+  //https://anikettatipamula.blogspot.com/2012/12/ball-tracking-detection-using-opencv.html
   //read input
   Mat frame;
   cap.read(frame);
@@ -95,9 +95,9 @@ bool detect_cones(VideoCapture cap){
   Mat hsv;
   //note hsv range is from [0,179], [0,255], [0,255] (Hue, Saturation, Value)
   cvtColor(frame, hsv, CV_BGR2HSV);
-  Scalar orange_lower(2,200,200); // try 5 and 10 for the first index . that works pretty well
-  Scalar orange_upper(18,255,255);
-  
+  Scalar orange_lower(2,200,150); // try 5 and 10 for the first index . that works pretty well
+  Scalar orange_upper(10,255,255);
+
   //Scalar purple_lower(5,200,200);
   //Scalar purple_upper(30,255,255);
 
@@ -107,7 +107,7 @@ bool detect_cones(VideoCapture cap){
 
   Mat final_image;
   orange_mask.convertTo(final_image, -1, 2, 0); //increase the contrast by the middle number
-  
+
   imshow("Tracking",final_image);
 
 
@@ -154,26 +154,50 @@ bool custom_process_frame(VideoCapture cap){
   Mat frame;
   cap.read(frame);
 
-  Mat hsv;
   //note hsv range is from [0,179], [0,255], [0,255] (Hue, Saturation, Value)
+  Mat hsv, hsv2;
   cvtColor(frame, hsv, CV_BGR2HSV);
-  
-  Scalar purple_lower(0,140,100); // I find that the ball doesn't really respond to the middle number. it is so high just to filter out the other colours
-  Scalar purple_upper(10,255,255);
+  hsv.convertTo(hsv2, -1, 2, 0); //increase the contrast by the middle number
+  //in dimmer environments the ball looks more orange and this is the mask for it
+  Scalar purple_lower1(0,100,100); // I find that the ball isn't as affected by the middle number as other numbers. it is so high just to filter out the other colours
+  Scalar purple_upper1(10,255,255); // limit the 255 if I don't want to orange cone. It's pretty bad cause they occupy almost the same hsv space
 
+  Scalar purple_lower2(105,100,100);
+  Scalar purple_upper2(179,255,255);
+
+  //in brighter environments the ball looks more pink and this is the mask for it
   Mat purple_mask;
-  inRange(hsv, purple_lower, purple_upper, purple_mask);
+  Mat purple_mask1;
+  Mat purple_mask2;
+  inRange(hsv, purple_lower1, purple_upper1, purple_mask1);
+  inRange(hsv, purple_lower2, purple_upper2, purple_mask2);
+  addWeighted(purple_mask1, 1.0, purple_mask2, 1.0, 0.0, purple_mask);
+
 
   Mat final_image;
-  purple_mask.convertTo(final_image, -1, 2, 0); //increase the contrast by the middle number
-  
-  imshow("Tracking",final_image);
+  purple_mask.convertTo(final_image, -1, 4, 0); //increase the contrast by the middle number
 
+  //find the center of mass of the bitmas image
+  Moments m = moments(purple_mask, false);
+  Point p1(m.m10/m.m00, m.m01/m.m00);
+
+  std::cout << Mat(p1).at<int>(0,1) << std::endl;
+
+  int x = Mat(p1).at<int>(0,0);
+  int y = Mat(p1).at<int>(0,1);
+  if(x != -2147483648){
+    //std::cout<<x<<std::endl;
+    //the ball is in view do something
+  }
   Mat channels[3];
   split(frame,channels);  // planes[2] is the red channel
-  //imshow("Tracking",channels[0]);
+  //imshow("asdsa",channels[0]);
 
 
+  //circle(purple_mask, p1, 5, Scalar(128,0,0), -1);
+  circle(frame, p1, 5, Scalar(128,0,0), -1);
+  imshow("Tracking",final_image);
+  //imshow("difff", frame);
   return 0;
 }
 
