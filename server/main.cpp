@@ -85,18 +85,28 @@ void test_write_speed(VideoCapture cap){
   std::printf("%ld\n",timediff(start2, end2));
 }
 
+//std::vector<std::pair<int,int>> get_cone_locations(Mat frame){ 
+// returns the locations of the <x,y> coords of n cones detected
+
+//}
+
 bool detect_cones(VideoCapture cap){
   if( waitKey(10) == 27 ) return 1; // stop capturing by pressing ESC
   //https://anikettatipamula.blogspot.com/2012/12/ball-tracking-detection-using-opencv.html
+  //https://gist.github.com/razimgit/d9c91edfd1be6420f58a74e1837bde18
   //read input
+  // idea: find the cones, draw the contours, then for each contour select the topmost point, this is the tip of the cone
   Mat frame;
   cap.read(frame);
+  GaussianBlur( frame, frame, Size(11, 11), 4, 4 );
+
 
   Mat hsv;
   //note hsv range is from [0,179], [0,255], [0,255] (Hue, Saturation, Value)
   cvtColor(frame, hsv, CV_BGR2HSV);
-  Scalar orange_lower(2,200,150); // try 5 and 10 for the first index . that works pretty well
-  Scalar orange_upper(10,255,255);
+  //hsv.convertTo(hsv, -1, 2, 0); //increase the contrast by the middle number
+  Scalar orange_lower(1,150,200); // try 5 and 10 for the first index . that works pretty well // 2 200, 150
+  Scalar orange_upper(15,255,255);
 
   //Scalar purple_lower(5,200,200);
   //Scalar purple_upper(30,255,255);
@@ -106,10 +116,10 @@ bool detect_cones(VideoCapture cap){
 
 
   Mat final_image;
-  orange_mask.convertTo(final_image, -1, 2, 0); //increase the contrast by the middle number
-
-  imshow("Tracking",final_image);
-
+  //orange_mask.convertTo(final_image, -1, 2, 0); //increase the contrast by the middle number
+  Mat channels[3];
+  split(hsv,channels);
+  imshow("Tracking",frame);
 
 
   /*
@@ -149,10 +159,40 @@ bool detect_cones(VideoCapture cap){
      HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows/8, 100, 20, 0, 0);*/
   return 0;
 }
+
+
+
+Mat findBiggestBlob(Mat & matImage){
+  int largest_area=0;
+  int largest_contour_index=0;
+
+  std::vector< std::vector<Point> > contours; // Vector for storing contour
+  std::vector<Vec4i> hierarchy;
+  Mat newImg(matImage.size(), CV_64FC1);
+  newImg = 0;
+
+  findContours( matImage, contours, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
+
+  for( int i = 0; i< contours.size(); i++ ) {// iterate through each contour. 
+    double a=contourArea( contours[i],false);  //  Find the area of contour
+    if(a>largest_area){
+      largest_area=a;
+      largest_contour_index=i;                //Store the index of largest contour
+      //bounding_rect=boundingRect(contours[i]); // Find the bounding rectangle for biggest contour
+    }
+  }
+
+  drawContours( newImg, contours, largest_contour_index, Scalar(255), CV_FILLED, 8, hierarchy ); // Draw the largest contour using previously stored index.
+  return newImg;
+}
+
+
+
 bool custom_process_frame(VideoCapture cap){
   if( waitKey(10) == 27 ) return 1; // stop capturing by pressing ESC
   Mat frame;
   cap.read(frame);
+  GaussianBlur( frame, frame, Size(11, 11), 4, 4 );
 
   //note hsv range is from [0,179], [0,255], [0,255] (Hue, Saturation, Value)
   Mat hsv, hsv2;
@@ -173,15 +213,57 @@ bool custom_process_frame(VideoCapture cap){
   inRange(hsv, purple_lower2, purple_upper2, purple_mask2);
   addWeighted(purple_mask1, 1.0, purple_mask2, 1.0, 0.0, purple_mask);
 
-
   Mat final_image;
   purple_mask.convertTo(final_image, -1, 4, 0); //increase the contrast by the middle number
 
+
+
+
+
+
+
+  //remove the cones from the mask
+  //coneMask = 1 - coneMask;
+  //final_image = add(final_image,coneMask);
+
+
+
+
+
+
+  //start analyzing the image
+  final_image = findBiggestBlob(final_image);
+  std::vector<Vec3f> circles;
+
+  Mat channels[3];
+  split(frame,channels);  // planes[2] is the red channel
+
+
+  Mat gray;
+  //gray = purple_mask;
+  gray = final_image;
+  // I might not want to do this cause it might mess up the points of the ball
+  erode(gray, gray, Mat(), Point(-1, -1), 2, 1, 1);
+  dilate(gray, gray, Mat(), Point(-1, -1), 2, 1, 1);
+  //cvtColor(frame, gray, CV_BGR2YCrCb);
+  //cvtColor(frame, gray, CV_BGR2GRAY);
+  /*HoughCircles( gray, circles, CV_HOUGH_GRADIENT, 1,2, 50, 60, 0, 1000 );
+    for( size_t i = 0; i < circles.size(); i++ )
+    {
+    std::cout<<circles.size()<<std::endl;
+    Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+    int radius = cvRound(circles[i][2]);
+  // circle center
+  circle( gray, center, 3, Scalar(0,255,0), -1, 8, 0 );
+  // circle outline
+  circle( gray, center, radius, Scalar(0,0,255), 3, 8, 0 );
+  }*/
+
   //find the center of mass of the bitmas image
-  Moments m = moments(purple_mask, false);
+  Moments m = moments(final_image, false);
   Point p1(m.m10/m.m00, m.m01/m.m00);
 
-  std::cout << Mat(p1).at<int>(0,1) << std::endl;
+  //std::cout << Mat(p1).at<int>(0,1) << std::endl;
 
   int x = Mat(p1).at<int>(0,0);
   int y = Mat(p1).at<int>(0,1);
@@ -189,15 +271,15 @@ bool custom_process_frame(VideoCapture cap){
     //std::cout<<x<<std::endl;
     //the ball is in view do something
   }
-  Mat channels[3];
-  split(frame,channels);  // planes[2] is the red channel
-  //imshow("asdsa",channels[0]);
 
-
-  //circle(purple_mask, p1, 5, Scalar(128,0,0), -1);
+  //https://stackoverflow.com/questions/16746473/opencv-find-bounding-box-of-largest-blob-in-binary-image
+  //https://www.learnopencv.com/blob-detection-using-opencv-python-c
   circle(frame, p1, 5, Scalar(128,0,0), -1);
-  imshow("Tracking",final_image);
-  //imshow("difff", frame);
+  //circle(frame, p1, 5, Scalar(128,0,0), -1);
+  imshow("asdsa",frame);
+
+  //imshow("Tracking",final_image);
+  //imshow("difff", gray);
   return 0;
 }
 
@@ -253,7 +335,7 @@ int main(int argc, char** argv){
     tracker->init(frame, bbox);
     imshow("Tracking", frame);
     while(true){
-      if(custom_process_frame(cap)){
+      if(detect_cones(cap)){
         break;
       }
       /*
