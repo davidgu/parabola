@@ -10,11 +10,15 @@ long timediff(clock_t t1, clock_t t2) {
   return elapsed;
 }
 int main(int argc, char** argv){ 
-  ll cap_duration = 1000;
-  const int cur_camera = 0;
-
-
+  ll cap_duration = 30000;
+  const int cur_camera = 1;
+  
   VideoCapture cap;
+
+  cap.set(CV_CAP_PROP_FRAME_WIDTH,1920);
+  cap.set(CV_CAP_PROP_FRAME_HEIGHT,1080);
+
+
   if(!cap.open(cur_camera)) return 0;
   if(argc == 1) std::cout<<"no time specified defaulting to 1 second"<<std::endl;
   else if(argc > 2) std::cout<<"too many times specified defaulting to 1 second"<<std::endl;
@@ -25,7 +29,7 @@ int main(int argc, char** argv){
   clock_t start_time, cur_time;
   start_time = clock();
   cur_time = clock();
-  Mat frames[1000];
+  Mat frames[10000];
   int frame_count = 0;
   std::cout<<"capturing frames"<<std::endl;
   while(timediff(start_time, cur_time) <= cap_duration && frame_count < 1000){
@@ -35,9 +39,9 @@ int main(int argc, char** argv){
     frame_count++;
     cur_time = clock();
   }
-  std::cout<<"saving frames"<<std::endl;
+  std::cout<<"ssaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framessaving framesaving frames"<<std::endl;
   for(int i = 0; i < frame_count;i++){
-    imwrite("photos/" + std::to_string(i) + ".jpg", frames[i]);
+    imwrite("photos/" + std::to_string(clock()) +".jpg", frames[i]);
   }
 
   return 0; 
