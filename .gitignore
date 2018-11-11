@@ -10,3 +10,6 @@
 
 # Ignore data files
 /collect_data/photos/
+
+# Ignore build directory
+/server/build/
