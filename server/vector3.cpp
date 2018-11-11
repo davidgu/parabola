@@ -17,6 +17,13 @@ Vector3 operator/(const Vector3& a, double b){
 Vector3 operator*(const Vector3& a, double b){
   return Vector3(a.x*b, a.y*b, a.z*b);
 }
+bool operator==(const Vector3& a, const Vector3& b){
+  return (a.x==b.x)&&(a.y==b.y)&&(a.z==b.z);
+}
+std::ostream& operator<<(std::ostream& out, const Vector3& a){
+  out << "(" << a.x << " " << a.y << " " << a.z << ")";
+  return out;
+}
 
 double Vector3::dot(const Vector3 a, const Vector3 b){
   return (a->x)*(b->x) + (a->y)*(b->y) + (a->z)*(b->z);
