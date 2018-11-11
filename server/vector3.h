@@ -7,9 +7,9 @@ class Vector3{
   public:
     Vector3(double a, double b, double c);
 
-    double dot(const Vector3 *a, const Vector3 *b);
-    double sum_components_squared(const Vector3 *a);
-    Vector3* projection(const Vector3 *a, const Vector3 *b);
+    static double dot(const Vector3 a, const Vector3 b);
+    static double sum_components_squared(const Vector3 a);
+    static Vector3 proj(const Vector3 a, const Vector3 b);
 
     friend Vector3 operator+(const Vector3& a, const Vector3& b);
     friend Vector3 operator-(const Vector3& a, const Vector3& b);
