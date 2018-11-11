@@ -13,13 +13,13 @@ class Vector3{
 
     friend Vector3 operator+(const Vector3& a, const Vector3& b);
     friend Vector3 operator-(const Vector3& a, const Vector3& b);
-    friend void operator/(Vector3& a, double b);
-    friend void operator*(Vector3& a, double b);
+    friend Vector3 operator/(const Vector3& a, double b);
+    friend Vector3 operator*(const Vector3& a, double b);
 };
 Vector3 operator+(const Vector3& a, const Vector3& b);
 Vector3 operator-(const Vector3& a, const Vector3& b);
-void operator/(Vector3& a, double b);
-void operator*(Vector3& a, double b);
+Vector3 operator/(const Vector3& a, double b);
+Vector3 operator*(const Vector3& a, double b);
 
 
 #endif

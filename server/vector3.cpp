@@ -11,16 +11,13 @@ Vector3 Vector3::operator+(const Vector3& a, const Vector3& b){
 Vector3 Vector3::operator-(const Vector3& a, const Vector3& b){
   return Vector3(a.x - b.x, a.y - b.y, a.z - a.z);
 }
-void Vector3::operator/(Vector3 *a, double b){
-  a->x/=b;
-  a->y/=b;
-  a->z/=b;
+Vector3 Vector3::operator/(Vector3 *a, double b){
+  return Vector3(a.x/b, a.y/b, a.z/b)
 }
-void Vector3::operator*(Vector3 *a, double b){
-  a->x*=b;
-  a->y*=b;
-  a->z*=b;
+Vector3 Vector3::operator*(Vector3 *a, double b){
+  return Vector3(a.x*b, a.y*b, a.z*b)
 }
+
 double Vector3::dot(const Vector3 *a, const Vector3 *b){
   return (a->x)*(b->x) + (a->y)*(b->y) + (a->z)*(b->z);
 }
