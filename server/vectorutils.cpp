@@ -1,4 +1,4 @@
-#include "vectorutils.h"
+#include "vectorutils.hpp"
 #include <exception>
 
 const int IMG_WIDTH = 1920;
