@@ -1,4 +1,4 @@
-#include "vector3.hpp"
+#include "../src/vector3.hpp"
 #include <assert.h>
 #include <iostream>
 
