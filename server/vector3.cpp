@@ -30,12 +30,6 @@ double Vector3::dot(const Vector3 a, const Vector3 b){
 }
 
 Vector3 Vector3::proj(const Vector3 a, const Vector3 b){
-  // Zero width projection case
-  if(a.x == b.x && a.x == b.x&&a.x == b.x){
-    throw std::runtime_error("proj(): Cannot project identical vectors");
-}
-
-  // Project b onto a
   double b_sum_abs_comps = (b.x*b.x) + (b.y*b.y) + (b.z*b.z);
   double scalar = dot(a,b) / b_sum_abs_comps;
   return b*scalar;
