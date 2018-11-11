@@ -1,4 +1,4 @@
-#include "vector3.h"
+#include "vector3.hpp"
 
 Vector3::Vector3(double a, double b, double c){
   x = a;
