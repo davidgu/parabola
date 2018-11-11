@@ -1,6 +1,10 @@
 #ifndef VECTOR3_H
 #define VECTOR3_H
+
 #include <iostream>
+#include <stdexcept>
+#include <cmath>
+
 class Vector3{
   public:
     double x, y, z;
