@@ -12,6 +12,7 @@ class Vector3{
 
     static double dot(const Vector3 a, const Vector3 b);
     static Vector3 proj(const Vector3 a, const Vector3 b);
+    static Vector3 perp(const Vector3 a, const Vector3 b);
 
     friend Vector3 operator+(const Vector3& a, const Vector3& b);
     friend Vector3 operator-(const Vector3& a, const Vector3& b);

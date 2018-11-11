@@ -35,4 +35,6 @@ Vector3 Vector3::proj(const Vector3 a, const Vector3 b){
   return b*scalar;
 }
 
-
+Vector3 Vector3::perp(const Vector3 a, const Vector3 b){
+  return b - Vector3::proj(a,b);
+}
