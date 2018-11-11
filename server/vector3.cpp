@@ -26,7 +26,7 @@ std::ostream& operator<<(std::ostream& out, const Vector3& a){
 }
 
 double Vector3::dot(const Vector3 a, const Vector3 b){
-  return (a->x)*(b->x) + (a->y)*(b->y) + (a->z)*(b->z);
+  return (a.x)*(b.x) + (a.y)*(b.y) + (a.z)*(b.z);
 }
 
 double Vector3::sum_components_squared(const Vector3 a){
