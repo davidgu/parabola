@@ -5,7 +5,7 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/tracking.hpp"
 
-#include "vector3.h"
+//#include "vector3.h"
 #include "framebuffer.h"
 
 #define ll long long
@@ -70,26 +70,45 @@ long timediff(clock_t t1, clock_t t2) {
   return elapsed;
 }
 
-std::vector<std::pair<int,int>> get_cone_locations(Mat frame){
+std::vector<std::pair<int,int> > get_cone_locations(Mat frame){
   //returns the locations of the <x,y> coords of n cones detected
+  std::vector< std::vector<Point> > contours0; // Vector for storing contour
   std::vector< std::vector<Point> > contours; // Vector for storing contour
   std::vector<Vec4i> hierarchy;
+  //findContours( frame, contours, hierarchy, imgproc.RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
   findContours( frame, contours, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
-  std::vector<std::pair<int,int>> points;
+  Mat frame2;
+
+// I give up I need to fill in the contours then redraw them I could also find the outermost contours but it didn't work
+  std::vector<std::vector<Point> >hull( contours.size() );
+  for( int i = 0; i < contours.size(); i++ )
+  {  convexHull( Mat(contours[i]), hull[i], false ); }
+  Scalar color( 255,255,255);
+drawContours( frame2, hull,-1, color, CV_FILLED,8,hierarchy);
+//   drawContours( frame2, hull, -1, 1, CV_FILLED, 8,hierarchy, 0, Point() );
+  findContours( frame2, contours, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
+
+  // idea: find the cones, draw the contours, then for each contour select the topmost point, this is the tip of the cone
+  //we need to fill in the contours here because we don't want gaps in the cone.
+
+
+  std::vector<std::pair<int,int> > points;
   for( int i = 0; i< contours.size(); i++ ) {// iterate through each contour. 
     int maxY = -1;
     int maxX = -1;
     for(int a = 0; a < contours[i].size();a++){
       int y = contours[i][a].y;
       int x = contours[i][a].x;
-      maxY = max(maxY,y);
       if(y > maxY){
         maxY = y;
         maxX = x;
       }
     }
-    points.push_back({maxX,maxY});
+    std::cout<<maxX<<" "<<maxY<<std::endl;
+    points.push_back(std::make_pair(maxX,maxY));
   }
+  std::cout<<hull.size()<<std::endl;
+  if(hull.size()>0) imshow("asd",frame2);
   return points;
 
 }
@@ -98,8 +117,7 @@ Mat detect_cones(Mat frame){
   //https://anikettatipamula.blogspot.com/2012/12/ball-tracking-detection-using-opencv.html
   //https://gist.github.com/razimgit/d9c91edfd1be6420f58a74e1837bde18
   //read input
-  // idea: find the cones, draw the contours, then for each contour select the topmost point, this is the tip of the cone
-//   GaussianBlur( frame, frame, Size(11, 11), 4, 4 );
+  //   GaussianBlur( frame, frame, Size(11, 11), 4, 4 );
   Mat hsv;
   //note hsv range is from [0,179], [0,255], [0,255] (Hue, Saturation, Value)
   cvtColor(frame, hsv, CV_BGR2HSV);
@@ -153,7 +171,7 @@ bool custom_process_frame(VideoCapture cap){
   Scalar purple_lower1(0,100,100); // I find that the ball isn't as affected by the middle number as other numbers. it is so high just to filter out the other colours
   Scalar purple_upper1(10,255,255); // limit the 255 if I don't want to orange cone. It's pretty bad cause they occupy almost the same hsv space
 
-  Scalar purple_lower2(105,100,100);
+  Scalar purple_lower2(105,80,80);
   Scalar purple_upper2(179,255,255);
 
   //in brighter environments the ball looks more pink and this is the mask for it
@@ -162,6 +180,18 @@ bool custom_process_frame(VideoCapture cap){
   Mat purple_mask2;
   inRange(hsv, purple_lower1, purple_upper1, purple_mask1);
   inRange(hsv, purple_lower2, purple_upper2, purple_mask2);
+
+  //   erode(purple_mask1, purple_mask1,Mat(), Point(-1, -1), 2, 1, 1);
+  //   erode(purple_mask1, purple_mask1,Mat(), Point(-1, -1), 2, 1, 1);
+  //   dilate(purple_mask1, purple_mask1, Mat(), Point(-1, -1), 2, 1, 1);
+  //   dilate(purple_mask1, purple_mask1, Mat(), Point(-1, -1), 2, 1, 1);
+
+
+  //   erode(purple_mask2, purple_mask2,Mat(), Point(-1, -1), 2, 1, 1);
+  //   erode(purple_mask2, purple_mask2,Mat(), Point(-1, -1), 2, 1, 1);
+  //   dilate(purple_mask2, purple_mask2, Mat(), Point(-1, -1), 2, 1, 1);
+  //   dilate(purple_mask2, purple_mask2, Mat(), Point(-1, -1), 2, 1, 1);
+
   addWeighted(purple_mask1, 1.0, purple_mask2, 1.0, 0.0, purple_mask);
 
   Mat final_image;
@@ -169,15 +199,21 @@ bool custom_process_frame(VideoCapture cap){
 
   //remove the cones from the mask
   Mat coneMask = detect_cones(frame);
-  std::vector<std::pair<int,int>> cone_locations = get_cone_locations(coneMask);
+  //imshow("asd",coneMask);
+
+  dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1);
+  std::vector<std::pair<int,int> > cone_locations = get_cone_locations(coneMask);
   std::vector<Point> cone_points;
   for(int i = 0; i < cone_locations.size();i++){
     Point cur_point(cone_locations[i].first,cone_locations[i].second);
     cone_points.push_back(cur_point);
   }
 
-  coneMask = 1 - coneMask;
-  final_image +=coneMask;
+  dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1);
+  dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1);
+  //we don't want to fill in the contours here because it might cover up the ball
+  coneMask = ~coneMask;
+  final_image = final_image & coneMask;
 
   //start analyzing the image
   final_image = findBiggestBlob(final_image);
@@ -202,11 +238,12 @@ bool custom_process_frame(VideoCapture cap){
 
   //https://stackoverflow.com/questions/16746473/opencv-find-bounding-box-of-largest-blob-in-binary-image
   //https://www.learnopencv.com/blob-detection-using-opencv-python-c
-  circle(frame, p1, 5, Scalar(128,0,0), -1);
+  circle(frame, p1, 5, Scalar(128,0,0), -1); // plot the point of the ball
   for(int i = 0 ; i < cone_points.size();i++){
-    circle(frame,cone_points[i],5,Scalar(0,0,128),-1);
+    circle(frame,cone_points[i],5,Scalar(128,128,128),-1);
   }
-  imshow("asdsa",frame);
+
+  //   imshow("asdsa",frame);
 
   return 0;
 }
@@ -227,7 +264,7 @@ void process_frame(VideoCapture cap, Ptr<Tracker> tracker, Rect2d bbox){
   else{
     std::cout << "Tracking failure!" << std::endl;
   }
-  imshow("Tracking", frame);
+  //imshow("Tracking", frame);
 }
 
 int main(int argc, char** argv){
