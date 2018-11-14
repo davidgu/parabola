@@ -1,10 +1,12 @@
 #ifndef VECTORUTILS_H
 #define VECTORUTILS_H
 
-#include "vectorutils.hpp"
+#include <utility>
+#include <exception>
+
 #include "cameraconfig.hpp"
-#include <vector3.h>
-#include <utility.h>
+#include "vector3.hpp"
+#include "vector2.hpp"
 
 Vector2 pnormalize_origin(Vector2 vec);
 

@@ -1,5 +1,4 @@
 #include "vectorutils.hpp"
-#include <exception>
 
 const int IMG_WIDTH = 1920;
 const int IMG_HEIGHT = 1080;
@@ -20,18 +19,19 @@ std::pair <Vector3,Vector3> build_vector(CameraConfig cam, Vector3 cam_wpos,
     // ball_ppos Vector2 is given in terms of normalized pixel coordinates
     Vector3 direction;
     Vector3 point;
+
     switch(cam.get_index()){
         case 0:
             direction = Vector3(ball_ppos.x, ball_ppos.y, 0);
-            point = cam.get_position;
+            point = cam.get_position();
             break;
         case 1:
             direction = Vector3(0, ball_ppos.x, ball_ppos.y);
-            point = cam.get_position;
+            point = cam.get_position();
             break;
         case 2:
             direction = Vector3(ball_ppos.x, 0, ball_ppos.y);
-            point = cam.get_position;
+            point = cam.get_position();
             break;
         default:
             throw std::invalid_argument("Invalid camera. This should never happen.");
@@ -42,7 +42,7 @@ std::pair <Vector3,Vector3> build_vector(CameraConfig cam, Vector3 cam_wpos,
 
 Vector3 middle_of_perp(const Vector3 v1, const Vector3 d1, const Vector3 d2){
   Vector3 l1 = d2 - d1;
-  Vector3 proj = proj(l1,v1);
+  Vector3 proj = Vector3::proj(l1,v1);
   Vector3 perp = l1 - proj;
   Vector3 p1 = d2-perp;
   Vector3 p2 = d2;
