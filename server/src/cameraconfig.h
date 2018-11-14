@@ -3,6 +3,7 @@
 
 #include "opencv2/calib3d.hpp"
 #include "vector3.h"
+#include <string>
 
 class CameraConfig{
     private:
@@ -12,6 +13,7 @@ class CameraConfig{
         // parameters.
     public:
         CameraConfig(int i, Vector3 p);
+        void load_from_file(std::string)
         int get_index();
         Vector3 get_position();
 };

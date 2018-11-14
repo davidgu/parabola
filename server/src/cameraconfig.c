@@ -12,3 +12,5 @@ CameraConfig::get_index(){
 CameraConfig::get_position(){
     return position;
 }
+
+CameraConfig::load_from_file(std::string)
