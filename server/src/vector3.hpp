@@ -9,6 +9,7 @@ class Vector3{
   public:
     double x, y, z;
     Vector3(double a, double b, double c);
+    Vector3();
 
     static double dot(const Vector3 a, const Vector3 b);
     static Vector3 proj(const Vector3 a, const Vector3 b);

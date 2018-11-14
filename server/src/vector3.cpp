@@ -5,6 +5,13 @@ Vector3::Vector3(double a, double b, double c){
   y = b;
   z = c;
 }
+
+Vector3::Vector3(){
+  x = 0.0;
+  y = 0.0;
+  z = 0.0;
+}
+
 Vector3 operator+(const Vector3& a, const Vector3& b){
   return Vector3(a.x + b.x, a.y + b.y, a.z + b.z);
 }
