@@ -1,4 +1,4 @@
-#include "vector2.h"
+#include "vector2.hpp"
 
 Vector2::Vector2(double a, double b){
   x = a;

@@ -1,8 +1,8 @@
 #ifndef VECTORUTILS_H
 #define VECTORUTILS_H
 
-#include "vectorutils.h"
-#include "cameraconfig.h"
+#include "vectorutils.hpp"
+#include "cameraconfig.hpp"
 #include <vector3.h>
 #include <utility.h>
 

@@ -1,8 +1,8 @@
 #include <queue>
 #include <exception>
 
-#include "vector3.h"
-#include "framebuffer.h"
+#include "vector3.hpp"
+#include "framebuffer.hpp"
 
 void FrameBuffer::update_pos(double val, int dimension){ // 0 = x, 1 = y, 2 = z
   if(dimension == 0){
