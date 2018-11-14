@@ -1,7 +1,7 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
-#include "vector3.h"
+#include "vector3.hpp"
 
 class FrameBuffer{
   private:
