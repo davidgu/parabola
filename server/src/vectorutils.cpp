@@ -39,3 +39,27 @@ std::pair <Vector3,Vector3> build_vector(CameraConfig cam, Vector3 cam_wpos,
     std::pair <Vector3, Vector3> ret (point, direction);
     return ret;
 }
+
+Vector3 middle_of_perp(const Vector3 v1, const Vector3 d1, const Vector3 d2){
+  Vector3 l1 = d2 - d1;
+  Vector3 proj = proj(l1,v1);
+  Vector3 perp = l1 - proj;
+  Vector3 p1 = d2-perp;
+  Vector3 p2 = d2;
+  // Does this not simplify to (d2) - (d2-perp) == perp?
+  Vector3 ans = (p2-p1)/2;
+  return ans;
+}
+
+Vector3 find_intersection(const Vector3 v1, const Vector3 v2, const Vector3 v3,
+                        const Vector3 d1, const Vector3 d2,const Vector3 d3){
+  Vector3 mid1 = middle_of_perp(v1,d1,d2);
+  Vector3 mid2 = middle_of_perp(v2,d2,d3);
+  Vector3 mid3 = middle_of_perp(v3,d3,d1);
+
+  return Vector3(
+        (mid1.x + mid2.x + mid3.x)/3, 
+        (mid1.y + mid2.y + mid3.y)/3, 
+        (mid1.z + mid2.z + mid3.z)/3
+      );
+}
