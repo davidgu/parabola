@@ -2,7 +2,7 @@
 #define CAMERACONFIG_H
 
 #include "opencv2/calib3d.hpp"
-#include "vector3.h"
+#include "vector3.hpp"
 #include <string>
 
 class CameraConfig{
