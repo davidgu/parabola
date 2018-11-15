@@ -37,11 +37,13 @@ double Vector3::dot(const Vector3 a, const Vector3 b){
 }
 
 Vector3 Vector3::proj(const Vector3 a, const Vector3 b){
+  // projects a onto b
   double b_sum_abs_comps = (b.x*b.x) + (b.y*b.y) + (b.z*b.z);
   double scalar = dot(a,b) / b_sum_abs_comps;
   return b*scalar;
 }
 
 Vector3 Vector3::perp(const Vector3 a, const Vector3 b){
+  // perp from a to b
   return b - Vector3::proj(a,b);
 }
