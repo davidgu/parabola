@@ -19,6 +19,18 @@ const int MULTITHREAD = 0;
 
 FrameBuffer frameBuffer;
 
+
+Mat detect_cones(Mat frame){
+  Mat hsv;
+  cvtColor(frame, hsv, CV_BGR2HSV);
+  Scalar orange_lower(1,150,200);
+  Scalar orange_upper(15,255,255);
+  Mat orange_mask;
+  inRange(hsv, orange_lower, orange_upper,orange_mask);
+  return orange_mask;
+}
+
+
 Mat findBiggestBlob(Mat & matImage){
   int largest_area=0;
   int largest_contour_index=0;
@@ -73,6 +85,14 @@ bool process_frame(VideoCapture cap){
   Mat final_image;
   purple_mask.convertTo(final_image, -1, 4, 0); //increase the contrast by the middle number
   final_image = findBiggestBlob(final_image);
+  Mat coneMask = detect_cones(frame);
+  dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1); 
+  dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1); 
+  coneMask = ~coneMask;
+  //imshow("asdsa",final_image);
+  final_image = final_image & coneMask;
+// bitwise_and( final_image, coneMask, final_image);
+  //std::cout<<"asdsad"<<std::endl;
 
   //find the center of mass of the bitmas image
   Moments m = moments(final_image, false);
