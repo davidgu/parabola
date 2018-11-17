@@ -1,0 +1,79 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class VisualizationManager : MonoBehaviour {
+
+    bool TimeFrozen = false;
+
+    // The origin point the server is using
+    // Additional information may be needed
+    Vector3 Origin;
+
+    List<GameObject> objectTrails;
+
+    Vector3[] anchorPoints;
+    public GameObject sceneRoot;
+    public GameObject anchorSelector;
+    public Transform anchorPointMarker;
+
+
+
+	void Start(){
+        objectTrails = new List<GameObject>();
+        anchorPoints = new Vector3[4];
+	}
+
+
+	// Receive new position data from server and draw trails
+	void Update () {
+		
+	}
+
+    // 4 Anchor points are needed 
+    void SetAnchorPoint(int index){
+        // Align crosshairs directly above cone, with phone precisely 1 meter above ground.
+        // Drop pillar of light into sky
+        float xcoord = anchorSelector.transform.position.x;
+        float ycoord = anchorSelector.transform.position.y - 1;
+        float zcoord = anchorSelector.transform.position.z;
+        Vector3 anchor = new Vector3(xcoord, ycoord, zcoord);
+        anchorPoints[index] = anchor;
+        DisplayAnchorPoint(index);
+    }
+
+    void DisplayAnchorPoint(int index){
+        Instantiate(anchorPointMarker, anchorPoints[index], Quaternion.identity, sceneRoot.transform);
+    }
+
+    void CalculateOrigin(){
+        
+    }
+
+
+    // Cache new data from the server, and hold present timestamp
+    // constant to allow for scrubbing through the timeline.
+    void FreezeTime(){
+        
+    }
+
+    // Append cached position data to position list, and reset present
+    // timestamp
+    void UnfreezeTime(){
+        
+    }
+
+    // Clear stored object path data, and clear object trails
+    void ClearPathData(){
+        
+    }
+
+    void ToggleTimeFreeze(){
+        if(!TimeFrozen){
+            FreezeTime();
+        }
+        else{
+            UnfreezeTime();
+        }
+    }
+}
