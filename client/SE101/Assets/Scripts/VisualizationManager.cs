@@ -137,5 +137,26 @@ public class VisualizationManager : MonoBehaviour {
         else{
             UnfreezeTime();
         }
+
+    public void LoadRandomTestData(){
+        List<TVPair> testData = new List<TVPair>();
+        testData.Add(new TVPair(0, new Vector3(0f, 0f, 0f)));
+        testData.Add(new TVPair(0.5, new Vector3(0.1f, 0f, 0f)));
+        testData.Add(new TVPair(1, new Vector3(0.2f, 0.1f, 0f)));
+        testData.Add(new TVPair(2, new Vector3(0.3f, 0.1f, 0.1f)));
+        testData.Add(new TVPair(2.3, new Vector3(0.4f, 0.1f, 0.2f)));
+        testData.Add(new TVPair(2.33, new Vector3(0.65f, 0.1f, 0.222f)));
+        testData.Add(new TVPair(2.333, new Vector3(0.7f, 0.1f, 0.1f)));
+        testData.Add(new TVPair(3, new Vector3(0.9f, 0.1f, 0f)));
+        testData.Add(new TVPair(4, new Vector3(1.2f, 0.2f, 0f)));
+
+        tvpairs = testData;
+    }
+
+    // xWidth is the width between NE and NW pylons
+    // zWidth is the width between NE and SE pylons
+    // Places markers at specific places to test calibration
+    public void LoadCalibrationTestData(){
+        
     }
 }
