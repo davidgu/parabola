@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <string>
 
 #include "vector3.hpp"
 
@@ -20,6 +21,9 @@ class TrackedObject{
 
         // Returns an immutable reference to past_pos
         const std::vector<std::pair<double, Vector3>> get_all_past_pos();
+
+        // Gives you all past positions as a json
+        const std::string get_all_past_pos_json();
 
         // Get the position of the ball closest to abstime
         // abstime refers to seconds elapsed since simulation start
