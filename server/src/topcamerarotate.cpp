@@ -1,13 +1,13 @@
 #include <iostream>
-#include <assert>
+#include <assert.h>
 #include <math.h>
 #include "opencv2/opencv.hpp"
 #include "opencv2/tracking.hpp"
-#include "../src/vector2.hpp"
+#include "vector2.hpp"
 
 using namespace cv;
 
-Vector2 rotate_ball_loc(std::vector<Vector2> > coneLocations, Vector2 ballLocation){
+Vector2 rotate_ball_loc(std::vector<Vector2> coneLocations, Vector2 ballLocation){
   // given the locations of the cones, returns the ball's catesian location
   // Note: The camera must be within 90 degrees of facing in the right orientation
   assert(coneLocations.size() == 4);
@@ -43,12 +43,15 @@ Vector2 rotate_ball_loc(std::vector<Vector2> > coneLocations, Vector2 ballLocati
   }
 
 
-  double slope = (lowestYPair.y - lowestXPair.y)/(lowestYPair.x - lowestXPair.x);
+  double slope = (lowestYPair.y - sLowestYPair.y)/(lowestYPair.x - sLowestYPair.x);
   double yDiff = sLowestYPair.y - lowestYPair.y;
   double theta = asin(yDiff/slope);
   
   Vector2 ans;
-  ans.x cos(theta)*ballLocation.x - sin(theta)*ballLocation.y;
-  ans.y= sin(theta)*ballLocation.x + cos(theta)*ballLocation.y;
+  ans.x = cos(theta)*ballLocation.x - sin(theta)*ballLocation.y;
+  ans.y = sin(theta)*ballLocation.x + cos(theta)*ballLocation.y;
   return ans;
+}
+int main(){
+  return 0;
 }
