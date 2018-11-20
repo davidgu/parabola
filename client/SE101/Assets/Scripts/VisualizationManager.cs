@@ -136,6 +136,18 @@ public class VisualizationManager : MonoBehaviour {
         }
         else{
             UnfreezeTime();
+    // Display trail data items up to ${deltatime} from the present
+    // ${deltatime} should be negative
+    void ChangeTrailDisplayRange(float deltatime){
+        double presentTime = tvpairs[tvpairs.Count - 1].GetTime();
+        for (int i = tvpairs.Count - 1; i >= 0; i--){
+            if (tvpairs[i].GetTime() < (presentTime - deltatime)){
+                ChangeTrailDisplayRange(i);
+                break;
+            }
+        }
+    }
+
     // Display the first ${index} items from item trail data
     void ChangeTrailDisplayRange(int index){
         // If index is greater than current size+1, create all display objects behind it
