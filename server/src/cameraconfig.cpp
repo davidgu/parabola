@@ -1,4 +1,5 @@
 #include <string>
+#include <fstream>
 #include "cameraconfig.hpp"
 #include "opencv2/opencv.hpp"
 #include "opencv2/tracking.hpp"
@@ -51,7 +52,7 @@ int CameraConfig::build_camera_config(){
   std::cout<<"4 Cameras connected. Camera Location Detection Running."<<std::endl;
 
   // idx 0 = top, idx 1 = up, idx 2 = right
-  int calibratedCamIdx[4]; // Each index describes the camera number
+  int calibratedCamIdx[3]; // Each index describes the camera number
 
 
   // I can put this in an array
@@ -73,11 +74,10 @@ int CameraConfig::build_camera_config(){
   int curCamShowing = 1;
   std::cout<<"NOTE: If this crashes at a specific cam move it to a diff port"<<std::endl;
   while(curCam < 3){
-
     int key = cv::waitKey(10);
     if(key == 27) return 1; // stop capturing by pressing ES
     else if(key == 13){ // ENTER pressed, selecting camera for curCam
-
+      calibratedCamIdx[curCam] = curCamShowing;
     } else if(key == 32){ // SPACE pressed, cycle through the cameras
       curCamShowing++;
       if(curCamShowing == 4) curCamShowing = 0;
@@ -86,13 +86,32 @@ int CameraConfig::build_camera_config(){
     capArr[curCamShowing].read(frames[curCamShowing]);
 
     // Displaying the name of the current Camera
-      if(curCam == 0){
-        cv::imshow("Top", frames[curCamShowing]);
-      }else if(curCam == 1){
-        cv::imshow("Up", frames[curCamShowing]);
-      }else{
-        cv::imshow("Right", frames[curCamShowing]);
-      }
+    if(curCam == 0){
+      cv::imshow("Top", frames[curCamShowing]);
+    }else if(curCam == 1){
+      cv::imshow("Up", frames[curCamShowing]);
+    }else{
+      cv::imshow("Right", frames[curCamShowing]);
+    }
+
+    topDist = 1.5;
+    upDist = 2.0;
+    rightDist = 2.0;
+
+
+    // first line is the indexes of the camera
+    // next we have the distance of the cameras to the middle
+    // next is the rotation params for each camera (90 degrees)
+    // next is the photo params for the colour of the cones
+    // next is the photo params for the colour of the ball
+    // next we have the locations of the cones from the top camera
+    // next we have the flag for the dewarping of the photo
+    // next is the rotation angle for the top camera
+
+    ofstream myfile;
+    myfile.open ("config.txt");
+    myfile << "";
+    myfile.close();
   }
   return 0;
 }
