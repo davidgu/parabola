@@ -39,19 +39,32 @@ Vector2 rotate_ball_loc(std::vector<Vector2> coneLocations, Vector2 ballLocation
       // update the lowest pair
       lowestY = y;
       lowestYPair = coneLocations[i];
+    }else if(y < sLowestY){
+      sLowestY = y;
+      sLowestYPair = coneLocations[i];
     }
   }
 
+  double xDiff = -1;
+  double yDiff = -1;
+  // std::cout<<lowestYPair.x<<" "<<lowestYPair.y<<std::endl;
+  // std::cout<<sLowestYPair.x<<" "<<sLowestYPair.y<<std::endl;
+  if(lowestYPair.x > sLowestYPair.x){ // The lower point it to the bottom right
+    xDiff = lowestYPair.x - sLowestYPair.x;
+    yDiff = sLowestYPair.y - lowestYPair.y;
+  }else{
+    xDiff = sLowestYPair.x - lowestYPair.x;
+    yDiff = sLowestYPair.y - lowestYPair.y;
+  }
 
-  double slope = (lowestYPair.y - sLowestYPair.y)/(lowestYPair.x - sLowestYPair.x);
-  double yDiff = sLowestYPair.y - lowestYPair.y;
-  double theta = asin(yDiff/slope);
-  
+
+  double theta = atan(yDiff/xDiff);
+  if(lowestYPair.x < sLowestYPair.x) theta=theta * -1.0;
+  // std::cout<<yDiff/xDiff<<std::endl;
   Vector2 ans;
+
+  // here we are multiplying the location vector by a rotation matrix
   ans.x = cos(theta)*ballLocation.x - sin(theta)*ballLocation.y;
   ans.y = sin(theta)*ballLocation.x + cos(theta)*ballLocation.y;
   return ans;
-}
-int main(){
-  return 0;
 }
