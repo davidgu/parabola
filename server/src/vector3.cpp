@@ -12,6 +12,20 @@ Vector3::Vector3(){
   z = 0.0;
 }
 
+std::string Vector3::to_string(){
+  std::string ret = "<"+std::to_string(x)+","+std::to_string(y)+","+std::to_string(z)+">";
+  return ret;
+}
+
+std::string Vector3::to_json(){
+  std::string x_str = std::to_string(x);
+  std::string y_str = std::to_string(y);
+  std::string z_str = std::to_string(z);
+
+  std::string ret = "{\"x\":\""+x_str+"\", \"y\":\""+y_str+", \"z\":\""+z_str+"\"}";
+  return ret;
+}
+
 Vector3 operator+(const Vector3& a, const Vector3& b){
   return Vector3(a.x + b.x, a.y + b.y, a.z + b.z);
 }
