@@ -71,7 +71,7 @@ public class VisualizationManager : MonoBehaviour {
 	}
 
     // 4 Anchor points are needed 
-    void SetAnchorPoint(int index){
+    public void SetAnchorPoint(int index){
         // Align crosshairs directly above cone, with phone precisely 1 meter above ground.
         // Drop pillar of light into sky
         float xcoord = anchorSelector.transform.position.x;
