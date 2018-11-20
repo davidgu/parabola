@@ -61,14 +61,21 @@ public class VisualizationManager : MonoBehaviour {
 
 	void Start(){
         objectTrails = new List<GameObject>();
+        tvpairs = new List<TVPair>();
         anchorPoints = new Vector3[4];
 	}
 
 
 	// Receive new position data from server and draw trails
 	void Update () {
-		
+        if(!timeFrozen && tvpairs.Count>0){
+            ChangeTrailDisplayRange(tvpairs.Count - 1);
+        }
 	}
+
+    void GetPositionDataFromServer(){
+        
+    }
 
     // 4 Anchor points are needed 
     public void SetAnchorPoint(int index){
