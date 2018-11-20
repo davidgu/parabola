@@ -56,57 +56,24 @@ int CameraConfig::build_camera_config(){
 
   // I can put this in an array
 
-  // cv::VideoCapture capArr[4];
- 
-  cv::VideoCapture cap0;
-  cv::VideoCapture cap1;
-  cv::VideoCapture cap2;
-  cv::VideoCapture cap3;
-  cap0.open(0);
-  cap1.open(1);
-  cap2.open(2);
-  cap3.open(3);
+  cv::VideoCapture capArr[4];
+  for(int i = 0 ; i < 4; i++){
+    capArr[i].open(i);
 
-  cap0.set(CV_CAP_PROP_FRAME_WIDTH,640);
-  cap0.set(CV_CAP_PROP_FRAME_HEIGHT,480);
-  cap0.set(CV_CAP_PROP_AUTOFOCUS, 0);
-  cap0.set(CV_CAP_PROP_EXPOSURE, 0);
-
-  cap1.set(CV_CAP_PROP_FRAME_WIDTH,640);
-  cap1.set(CV_CAP_PROP_FRAME_HEIGHT,480);
-  cap1.set(CV_CAP_PROP_AUTOFOCUS, 0);
-  cap1.set(CV_CAP_PROP_EXPOSURE, 0);
-
-  cap2.set(CV_CAP_PROP_FRAME_WIDTH,640);
-  cap2.set(CV_CAP_PROP_FRAME_HEIGHT,480);
-  cap2.set(CV_CAP_PROP_AUTOFOCUS, 0);
-  cap2.set(CV_CAP_PROP_EXPOSURE, 0);
-
-  cap3.set(CV_CAP_PROP_FRAME_WIDTH,640);
-  cap3.set(CV_CAP_PROP_FRAME_HEIGHT,480);
-  cap3.set(CV_CAP_PROP_AUTOFOCUS, 0);
-  cap3.set(CV_CAP_PROP_EXPOSURE, 0);
-
-
-
+    capArr[i].set(CV_CAP_PROP_FRAME_WIDTH,640);
+    capArr[i].set(CV_CAP_PROP_FRAME_HEIGHT,480);
+    capArr[i].set(CV_CAP_PROP_AUTOFOCUS, 0);
+    capArr[i].set(CV_CAP_PROP_EXPOSURE, 0);
+  }
 
 
   int curCam = 0;
   int camNumToIdx = -1;
   cv::Mat frames[4];
   int curCamShowing = 1;
+  std::cout<<"NOTE: If this crashes at a specific cam move it to a diff port"<<std::endl;
   while(curCam < 3){
-    if(curCamShowing == 0){
-      cap0.read(frames[0]);
-    }else if(curCamShowing == 1){
-      cap1.read(frames[1]);
-    }else if(curCamShowing == 2){
-      cap2.read(frames[2]);
-    }else if(curCamShowing == 3){
-      cap3.read(frames[3]);
-    }else{
-      std::cout<<"Error: You are selecting a camera outside of the limits"<<std::endl;
-    }
+
     int key = cv::waitKey(10);
     if(key == 27) return 1; // stop capturing by pressing ES
     else if(key == 13){ // ENTER pressed, selecting camera for curCam
@@ -114,22 +81,18 @@ int CameraConfig::build_camera_config(){
     } else if(key == 32){ // SPACE pressed, cycle through the cameras
       curCamShowing++;
       if(curCamShowing == 4) curCamShowing = 0;
-    }
-    else if(key != -1)std::cout<<key<<std::endl;
+    } else if(key != -1) std::cout<<key<<std::endl;
 
+    capArr[curCamShowing].read(frames[curCamShowing]);
 
     // Displaying the name of the current Camera
-    if (countNonZero(frames[curCamShowing]) >= 1){
       if(curCam == 0){
-        imshow("Top", frames[curCamShowing]);
+        cv::imshow("Top", frames[curCamShowing]);
       }else if(curCam == 1){
-        imshow("Up", frames[curCamShowing]);
+        cv::imshow("Up", frames[curCamShowing]);
       }else{
-        imshow("Right", frames[curCamShowing]);
+        cv::imshow("Right", frames[curCamShowing]);
       }
-    }else{
-      std::cout<<curCamShowing<<std::endl;
-    }
   }
   return 0;
 }
