@@ -4,7 +4,31 @@ using UnityEngine;
 
 public class VisualizationManager : MonoBehaviour {
 
-    bool TimeFrozen = false;
+    // Time vector pair
+    private class TVPair{
+        double time;
+        Vector3 vector;
+
+        public TVPair(double time, float x, float y, float z){
+            this.time = time;
+            this.vector = new Vector3(x, y, z);
+        }
+
+        public TVPair(double time, Vector3 vector){
+            this.time = time;
+            this.vector = vector;
+        }
+
+        public double GetTime(){
+            return time;
+        }
+
+        public Vector3 GetVector3(){
+            return vector;
+        }
+    }
+
+    bool timeFrozen = false;
 
     // The origin point the server is using
     // Additional information may be needed
