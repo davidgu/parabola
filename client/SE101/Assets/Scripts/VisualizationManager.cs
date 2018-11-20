@@ -136,7 +136,23 @@ public class VisualizationManager : MonoBehaviour {
         }
         else{
             UnfreezeTime();
+    // Display the first ${index} items from item trail data
+    void ChangeTrailDisplayRange(int index){
+        // If index is greater than current size+1, create all display objects behind it
+        if(index >= objectTrails.Count){
+            for (int i = objectTrails.Count; i <= index; i++){
+                ShowObjectTrail(i);
+            }
         }
+        else if(index < objectTrails.Count){
+            for (int i = objectTrails.Count - 1; i > index; i--){
+                Destroy(objectTrails[i]);
+            }
+        }
+        else{
+            throw new System.Exception("THIS SHOULD NEVER HAPPEN!");
+        }
+    }
 
     public void LoadRandomTestData(){
         List<TVPair> testData = new List<TVPair>();
