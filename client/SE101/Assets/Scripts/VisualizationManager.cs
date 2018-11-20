@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -43,7 +43,10 @@ public class VisualizationManager : MonoBehaviour {
     }
 
     void DisplayAnchorPoint(int index){
-        Instantiate(anchorPointMarker, anchorPoints[index], Quaternion.identity, sceneRoot.transform);
+        float xcoord = anchorPoints[index].x;
+        float ycoord = anchorPoints[index].y + 100;
+        float zcoord = anchorPoints[index].z;
+        Instantiate(anchorPointMarker, new Vector3(xcoord, ycoord, zcoord), Quaternion.identity, null);
     }
 
     void CalculateOrigin(){
