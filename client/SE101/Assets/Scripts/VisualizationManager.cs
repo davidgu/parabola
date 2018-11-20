@@ -180,6 +180,10 @@ public class VisualizationManager : MonoBehaviour {
             timeSlider.value = 0f;
         }
     }
+
+    void ShowObjectTrail(int index){
+        objectTrails.Add(Instantiate(objectTrail, tvpairs[index].GetVector3() + origin, Quaternion.identity, null).gameObject);
+    }
     // Display trail data items up to ${deltatime} from the present
     // ${deltatime} should be negative
     void ChangeTrailDisplayRange(float deltatime){
