@@ -146,8 +146,12 @@ public class VisualizationManager : MonoBehaviour {
     }
 
     // Clear stored object path data, and clear object trails
-    void ClearPathData(){
-        
+    public void ClearPathData(){
+        foreach(GameObject trailItem in objectTrails){
+            Destroy(trailItem);
+        }
+
+        tvpairs = new List<TVPair>();
     }
 
     public void ToggleTimeFreeze(){
