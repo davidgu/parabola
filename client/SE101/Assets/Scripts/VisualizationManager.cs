@@ -31,17 +31,33 @@ public class VisualizationManager : MonoBehaviour {
     bool timeFrozen = false;
 
     // The origin point the server is using
+    // Positive Z is forward
     // Additional information may be needed
-    Vector3 Origin;
+    Vector3 origin;
+    Quaternion originForward;
+    Transform originDisplay;
 
+    // Height of the origin in meters, from the ground plane
+    const float originHeight = 1.5f;
+
+    // Positions of the ball in time vector pair form
+    List<TVPair> tvpairs;
     List<GameObject> objectTrails;
 
+    // Anchor:
+    // 0 -> SW
+    // 1 -> NW
+    // 2 -> NE
+    // 3 -> SE
     Vector3[] anchorPoints;
-    public GameObject sceneRoot;
+
     public GameObject anchorSelector;
     public Transform anchorPointMarker;
+    public Transform originPointMarker;
+    public Transform objectTrail;
 
-
+    public Slider timeSlider;
+    public Button freezeTimeButton;
 
 	void Start(){
         objectTrails = new List<GameObject>();
