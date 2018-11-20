@@ -114,6 +114,26 @@ public class VisualizationManager : MonoBehaviour {
 
         origin = new Vector3(xcoord, ycoord, zcoord);
     }
+
+    // Show a little glowing ball at the origin point
+    void DisplayOrigin(){
+        // TODO: Origin object should face towards north
+        // Calculate this with the direciton of the vector3 between NW and SW
+        CalculateOrigin();
+        originDisplay = Instantiate(originPointMarker, origin, originForward, null);
+    }
+
+    public void ToggleDisplayOrigin(){
+        if(originDisplay == null){
+            DisplayOrigin();
+        }
+        else{
+            Destroy(originDisplay.gameObject);
+        }
+    }
+
+
+    // Cache new data from the server (do not display), and hold present timestamp
     // constant to allow for scrubbing through the timeline.
     void FreezeTime(){
         
