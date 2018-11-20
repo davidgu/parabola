@@ -84,14 +84,15 @@ bool process_frame(VideoCapture cap){
 
   Mat final_image;
   purple_mask.convertTo(final_image, -1, 4, 0); //increase the contrast by the middle number
-  final_image = findBiggestBlob(final_image);
   Mat coneMask = detect_cones(frame);
+  dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1); 
   dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1); 
   dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1); 
   coneMask = ~coneMask;
   //imshow("asdsa",final_image);
   final_image = final_image & coneMask;
-// bitwise_and( final_image, coneMask, final_image);
+  final_image = findBiggestBlob(final_image);
+  //bitwise_and( final_image, coneMask, final_image);
   //std::cout<<"asdsad"<<std::endl;
 
   //find the center of mass of the bitmas image
