@@ -150,12 +150,25 @@ public class VisualizationManager : MonoBehaviour {
         
     }
 
-    void ToggleTimeFreeze(){
-        if(!TimeFrozen){
+    public void ToggleTimeFreeze(){
+        if(!timeFrozen){
             FreezeTime();
+            timeFrozen = true;
+            freezeTimeButton.gameObject.GetComponent<Image>().color = new Color(0.1475169f, 0.8018868f, 0.2082552f);
+
+            // Enable Time Slider interaction
+            timeSlider.interactable = true;
         }
         else{
             UnfreezeTime();
+            timeFrozen = false;
+            freezeTimeButton.gameObject.GetComponent<Image>().color = new Color(1.0f, 0.2431373f, 0.3294118f);
+
+            // Disable Time Slider interaction and reset position
+            timeSlider.interactable = false;
+            timeSlider.value = 0f;
+        }
+    }
     // Display trail data items up to ${deltatime} from the present
     // ${deltatime} should be negative
     void ChangeTrailDisplayRange(float deltatime){
