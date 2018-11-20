@@ -90,11 +90,30 @@ public class VisualizationManager : MonoBehaviour {
     }
 
     void CalculateOrigin(){
-        
+        // The origin is located at the middle of the anchor points
+        // Find the average of all andhor point x, y, z
+        float xcoord = 0f;
+        float ycoord = 0f;
+        float zcoord = 0f;
+
+        Vector3 SWtoNW = anchorPoints[1] - anchorPoints[0];
+
+        originForward = Quaternion.LookRotation(SWtoNW);
+
+        for (int i = 0; i < 4; i++){
+            xcoord += anchorPoints[i].x;
+            ycoord += anchorPoints[i].y;
+            zcoord += anchorPoints[i].z;
+        }
+
+        xcoord /= 4;
+        ycoord /= 4;
+        zcoord /= 4;
+
+        ycoord += originHeight;
+
+        origin = new Vector3(xcoord, ycoord, zcoord);
     }
-
-
-    // Cache new data from the server, and hold present timestamp
     // constant to allow for scrubbing through the timeline.
     void FreezeTime(){
         
