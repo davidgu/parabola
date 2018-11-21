@@ -27,6 +27,7 @@ class TrackedObject{
 
         // Gives you all past positions as a json
         const std::string get_all_past_tvpair_json();
+        const std::string get_tvpair_json(int index);
 
         // Get the position of the ball closest to abstime
         // abstime refers to seconds elapsed since simulation start

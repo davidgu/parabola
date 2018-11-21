@@ -38,11 +38,16 @@ const std::vector<std::pair<double, Vector3>> TrackedObject::get_all_past_tvpair
 const std::string TrackedObject::get_all_past_tvpair_json(){
     std::string ret = "{\"data\":[";
     for(int i = past_pos.size - 1; i>=0; i--){
-        std::string object = "{\"time\":"+std::to_string(past_pos[i].first)+"\",\"pos\":";
-        object += past_pos[i].second.to_string();
+        ret += get_tvpair_json(i);
     }
     ret += "]}";
     return ret;
+}
+
+const std::string TrackedObject::get_tvpair_json(int index){
+    std::string str = "{\"time\":"+std::to_string(past_pos[index].first)+"\",\"pos\":";
+    str += past_pos[index].second.to_string();
+    return str;
 }
 
 // Template to compare pairs
