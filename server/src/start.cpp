@@ -22,92 +22,6 @@ const int trackerSelection = 4;
 
 FrameBuffer frameBuffer;
 
-std::vector<std::pair<int,int> > get_cone_locations(Mat frame){
-  //returns the locations of the <x,y> coords of n cones detected std::vector< std::vector<Point> > contours0; // Vector for storing contour
-  std::vector< std::vector<Point> > contours; // Vector for storing contour
-  std::vector<Vec4i> hierarchy;
-  //findContours( frame, contours, hierarchy, imgproc.RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-  findContours( frame, contours, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
-
-  std::vector<std::pair<int,int> > points;
-  for( int i = 0; i< contours.size(); i++ ) {// iterate through each contour. 
-    int maxY = -1;
-    int maxX = -1;
-    for(int a = 0; a < contours[i].size();a++){
-      int y = contours[i][a].y;
-      int x = contours[i][a].x;
-      if(y > maxY){
-        maxY = y;
-        maxX = x;
-      }
-    }
-    std::cout<<maxX<<" "<<maxY<<std::endl;
-    points.push_back(std::make_pair(maxX,maxY));
-  }
-  //imshow("asd",frame2);
-  return points;
-}
-
-std::vector<std::pair<int,int> > locate_cones_upper(Mat frame){
-  //returns the locations of the <x,y> coords of n cones detected
-  std::vector< std::vector<Point> > contours0; // Vector for storing contour
-  std::vector< std::vector<Point> > contours; // Vector for storing contour
-  std::vector<Vec4i> hierarchy;
-  //findContours( frame, contours, hierarchy, imgproc.RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-  findContours( frame, contours, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
-  Mat frame2;
-
-  // I give up I need to fill in the contours then redraw them I could also find the outermost contours but it didn't work
-  std::vector<std::vector<Point> >hull( contours.size() );
-  for( int i = 0; i < contours.size(); i++ )
-  {  convexHull( Mat(contours[i]), hull[i], false ); }
-  Scalar color( 255,255,255);
-  drawContours( frame2, hull,-1, color, CV_FILLED,8,hierarchy);
-  //   drawContours( frame2, hull, -1, 1, CV_FILLED, 8,hierarchy, 0, Point() );
-  findContours( frame2, contours, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
-
-  // idea: find the cones, draw the contours, then for each contour select the topmost point, this is the tip of the cone
-  //we need to fill in the contours here because we don't want gaps in the cone.
-
-
-  std::vector<std::pair<int,int> > points;
-  for( int i = 0; i< contours.size(); i++ ) {// iterate through each contour. 
-    int maxY = -1;
-    int maxX = -1;
-    for(int a = 0; a < contours[i].size();a++){
-      int y = contours[i][a].y;
-      int x = contours[i][a].x;
-      if(y > maxY){
-        maxY = y;
-        maxX = x;
-      }
-    }
-    std::cout<<maxX<<" "<<maxY<<std::endl;
-    points.push_back(std::make_pair(maxX,maxY));
-  }
-  std::cout<<hull.size()<<std::endl;
-  if(hull.size()>0) imshow("asd",frame2);
-  return points;
-}
-
-
-/*Mat detect_cones(Mat frame){
-//https://anikettatipamula.blogspot.com/2012/12/ball-tracking-detection-using-opencv.html
-//https://gist.github.com/razimgit/d9c91edfd1be6420f58a74e1837bde18
-//read input
-//   GaussianBlur( frame, frame, Size(11, 11), 4, 4 );
-Mat hsv;
-//note hsv range is from [0,179], [0,255], [0,255] (Hue, Saturation, Value)
-cvtColor(frame, hsv, CV_BGR2HSV);
-//   hsv.convertTo(hsv, -1, 2, 0); //increase the contrast by the middle number
-
-Scalar orange_lower(1,150,200); 
-Scalar orange_upper(15,255,255);
-Mat orange_mask;
-inRange(hsv, orange_lower, orange_upper,orange_mask);
-
-return orange_mask;
-}*/
 
 Mat detect_cones(Mat frame){
   Mat hsv;
@@ -122,60 +36,106 @@ Mat detect_cones(Mat frame){
   double ratio = 3.0;
   int kernel_size = 3;
   Canny( detected_edges, detected_edges, lowThreshold, lowThreshold*ratio, kernel_size );
+  dilate(detected_edges, detected_edges, 1);
+  erode(detected_edges, detected_edges, 1);
   Mat dst;
   dst = Scalar::all(0);
   frame.copyTo( dst, detected_edges);
   return dst;
 }
 
+
+void kmeansMask(const Mat& src, const Mat& mask, const int k, Mat& dst) {
+  Mat tmp = Mat::zeros(mask.rows * mask.cols, 1, CV_8UC3);
+  int counter = 0;
+  for (int r = 0; r < mask.rows; ++r)
+  {
+    for (int c = 0; c < mask.cols; ++c)
+    {
+      if (mask.at<unsigned char>(r, c))
+      {
+        tmp.at<cv::Vec3f>(counter++, 0) = src.at<cv::Vec3b>(r, c);
+      }
+    }
+  }
+
+  Mat labels;
+  kmeans(tmp, k, labels, TermCriteria(), 1, KMEANS_RANDOM_CENTERS);
+
+  dst = cv::Mat(mask.size(), CV_32S, k);
+  counter = 0;
+  for (int r = 0; r < mask.rows; ++r) {
+    for (int c = 0; c < mask.cols; ++c) {
+      if (mask.at<unsigned char>(r, c)) {
+        dst.at<int>(r, c) = labels.at<int>(counter++, 0);
+      }
+    }
+  }
+}
+
 bool cone_detect_test(VideoCapture cap){
   if( waitKey(10) == 27 ) return 1; // stop capturing by pressing ESC
   Mat frame;
   cap.read(frame);
+  frame = detect_cones(frame);
   Mat coneFrame = detect_cones(frame);
-  imshow("asdas",coneFrame);
-  return 0;
-  //erode(coneFrame, coneFrame,Mat(), Point(-1, -1), 2, 1, 1);
-  //erode(coneFrame, coneFrame,Mat(), Point(-1, -1), 2, 1, 1);
-  //dilate(coneFrame, coneFrame, Mat(), Point(-1, -1), 2, 1, 1);
-  //dilate(coneFrame, coneFrame, Mat(), Point(-1, -1), 2, 1, 1);
+  Mat centers;
+  kmeansMask(frame,coneFrame,4,centers);
 
-  GaussianBlur( coneFrame, coneFrame, Size(11, 11), 4, 4);
-  std::vector< std::vector<Point> > contours; // Vector for storing contour
-  std::vector<Vec4i> hierarchy;
-  //findContours( frame, contours, hierarchy, imgproc.RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-  findContours( coneFrame, contours, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
-  Mat frame2;
+  /*
+     Mat samples(coneFrame.rows * coneFrame.cols, 1, CV_32FC2);
+     for( int y = 0; y < coneFrame.rows; y++ ){
+     for( int x = 0; x < coneFrame.cols; x++ ){
+     samples.at<int>(y + x*coneFrame.rows) = coneFrame.at<int>(y,x);
+     }
+     }*/
 
-  // I give up I need to fill in the contours then redraw them I could also find the outermost contours but it didn't work
-  std::vector<std::vector<Point> >hull( contours.size() );
-  for( int i = 0; i < contours.size(); i++ ) { 
-    convexHull( Mat(contours[i]), hull[i], false ); 
+  /*
+  cv::Mat tmp = cv::Mat::zeros(cv::countNonZero(mask), 1, labImage.type());
+  int counter = 0;
+  for (int r = 0; r < mask.rows; ++r){
+    for (int c = 0; c < mask.cols; ++c){
+      if (!mask.at<unsigned char>(r, c)){
+        // I assume Lab pixels are stored as a vector of floats
+        tmp.at<cv::Vec3f>(counter++, 0) = labImage.at<cv::Vec3b>(r, c);
+      }
+    }
   }
 
-  Scalar color( 255,255,255);
-  drawContours(coneFrame, hull,-1, color, CV_FILLED,8,hierarchy);
-  drawContours(coneFrame, contours,-1, color, CV_FILLED,8,hierarchy);
-  //   drawContours( frame2, hull, -1, 1, CV_FILLED, 8,hierarchy, 0, Point() );
-  //findContours( coneFrame, contours, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
 
-  // idea: find the cones, draw the contours, then for each contour select the topmost point, this is the tip of the cone
-  //we need to fill in the contours here because we don't want gaps in the cone.
-
-
-  std::vector<std::pair<int,int> > cone_locations = get_cone_locations(coneFrame);
-  std::vector<Point> cone_points;
-  for(int i = 0; i < cone_locations.size();i++){
-    Point cur_point(cone_locations[i].first,cone_locations[i].second);
-    cone_points.push_back(cur_point);
+  int clusterCount = 4;
+  Mat labels;
+  int attempts = 5;
+  Mat centers;
+  kmeans(tmp, clusterCount, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 10000, 0.0001), attempts, KMEANS_PP_CENTERS, centers );
+*/
+  for (int i=0; i<centers.cols; i++) {
+    circle(frame,Point(centers.at<int>(i,0),centers.at<int>(i,1)),4,Scalar(200));
   }
-  for(int i = 0 ; i < cone_points.size();i++){
-    circle(frame,cone_points[i],5,Scalar(128,128,128),-1);
-  }
-  //imshow("asdas",frame);
-
-  return 0;
+  /*
+     Mat new_image( coneFrame.size(), coneFrame.type() );
+     for( int y = 0; y < coneFrame.rows; y++ ){
+     for( int x = 0; x < coneFrame.cols; x++ ) {
+     int cluster_idx = labels.at<int>(y + x*coneFrame.rows,0);
+// this is a color image
+Point ipt = points.at<Point2f>(i);
+circle( new_image, ipt, 2, colorTab[clusterIdx], FILLED, LINE_AA );
+new_image.at<Vec3b>(y,x)[0] = centers.at<float>(cluster_idx, 0);
+//new_image.at<Vec3b>(y,x)[1] = centers.at<float>(cluster_idx, 1);
+//new_image.at<Vec3b>(y,x)[2] = centers.at<float>(cluster_idx, 2);
 }
+}*/
+
+/*
+   for(int i = 0; i < sampleCount; i++ ) {
+   int clusterIdx = labels.at<int>(i);
+   Point ipt = points.at<Point2f>(i);
+   circle( new_image, ipt, 2, colorTab[clusterIdx], FILLED, LINE_AA );
+   }*/
+imshow( "clustered image", frame);
+return 0;
+}
+
 
 bool custom_process_frame(VideoCapture cap){
   if( waitKey(10) == 27 ) return 1; // stop capturing by pressing ESC
@@ -222,7 +182,7 @@ bool custom_process_frame(VideoCapture cap){
   //imshow("asd",coneMask);
 
   dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1);
-  std::vector<std::pair<int,int> > cone_locations = get_cone_locations(coneMask);
+  std::vector<std::pair<int,int> > cone_locations;// = get_cone_locations(coneMask);
   std::vector<Point> cone_points;
   for(int i = 0; i < cone_locations.size();i++){
     Point cur_point(cone_locations[i].first,cone_locations[i].second);
@@ -242,11 +202,11 @@ bool custom_process_frame(VideoCapture cap){
   split(frame,channels);  // planes[2] is the red channel
 
 
-  //find the center of mass of the bitmas image
+  // find the center of mass of the bitmask image
   Moments m = moments(final_image, false);
   Point p1(m.m10/m.m00, m.m01/m.m00);
 
-  //std::cout << Mat(p1).at<int>(0,1) << std::endl;
+  // std::cout << Mat(p1).at<int>(0,1) << std::endl;
 
   int x = Mat(p1).at<int>(0,0);
   int y = Mat(p1).at<int>(0,1);
@@ -255,21 +215,21 @@ bool custom_process_frame(VideoCapture cap){
     //the ball is in view do something
   }
 
-  //https://stackoverflow.com/questions/16746473/opencv-find-bounding-box-of-largest-blob-in-binary-image
-  //https://www.learnopencv.com/blob-detection-using-opencv-python-c
+  // https://stackoverflow.com/questions/16746473/opencv-find-bounding-box-of-largest-blob-in-binary-image
+  // https://www.learnopencv.com/blob-detection-using-opencv-python-c
   circle(frame, p1, 5, Scalar(128,0,0), -1); // plot the point of the ball
   for(int i = 0 ; i < cone_points.size();i++){
     circle(frame,cone_points[i],5,Scalar(128,128,128),-1);
   }
 
-  //   imshow("asdsa",frame);
+  // imshow("asdsa",frame);
 
   return 0;
 }
 
 int main(int argc, char** argv){
   VideoCapture cap;
-  if(!cap.open(CAMERA_2))
+  if(!cap.open(0))
     return 0;
 
   cap.set(CV_CAP_PROP_FRAME_WIDTH,640);

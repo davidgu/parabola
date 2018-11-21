@@ -89,11 +89,9 @@ bool process_frame(VideoCapture cap){
   dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1); 
   dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1); 
   coneMask = ~coneMask;
-  //imshow("asdsa",final_image);
+
   final_image = final_image & coneMask;
   final_image = findBiggestBlob(final_image);
-  //bitwise_and( final_image, coneMask, final_image);
-  //std::cout<<"asdsad"<<std::endl;
 
   //find the center of mass of the bitmas image
   Moments m = moments(final_image, false);

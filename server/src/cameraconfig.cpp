@@ -40,7 +40,7 @@ int CameraConfig::countCameras() {
   return maxTested;
 }
 
-cv::Mat detect_cones(cv::Mat frame, int coneCali[2][3]){
+cv::Mat CameraConfig::detect_cones(cv::Mat frame, int coneCali[2][3]){
   cv::Mat hsv;
   cv::cvtColor(frame, hsv, CV_BGR2HSV);
   cv::Scalar orange_lower(coneCali[0][0],coneCali[0][1],coneCali[0][2]);
@@ -48,7 +48,7 @@ cv::Mat detect_cones(cv::Mat frame, int coneCali[2][3]){
   cv::Mat orange_mask;
   cv::inRange(hsv, orange_lower, orange_upper,orange_mask);
   cv::Mat detected_edges;
-  cv::blur( orange_mask, detected_edges, Size(3,3) );
+  cv::blur( orange_mask, detected_edges, cv::Size(3,3) );
   double lowThreshold = 14.0;
   double ratio = 3.0;
   int kernel_size = 3;
@@ -59,45 +59,17 @@ cv::Mat detect_cones(cv::Mat frame, int coneCali[2][3]){
   return dst;
 }
 
-int CameraConfig::build_camera_config(){
-  // Cycles through the cameras to find which one it is
-  // Also states how far the cameras are from the middle
-  double sideCamHeights = 1.4;
-  /*int numCams = countCameras();
-    if(numCams != 4){
-    std::cout<<"Four cameras need to be connected. The number of cameras are: "<<numCams<<std::endl;
-    return;
-    }*/
-  std::cout<<"4 Cameras connected. Camera Location Detection Running."<<std::endl;
-
-  // idx 0 = top, idx 1 = up, idx 2 = right
-  int calibratedCamIdx[3]; // Each index describes the camera number
-
-
-  // I can put this in an array
-
-  cv::VideoCapture capArr[4];
-  for(int i = 0 ; i < 4; i++){
-    if(!capArr[i].open(i)){
-      std::cout<<"can't open cam: "<<i<<std::endl;
-    }
-    capArr[i].set(CV_CAP_PROP_FRAME_WIDTH,640);
-    capArr[i].set(CV_CAP_PROP_FRAME_HEIGHT,480);
-    capArr[i].set(CV_CAP_PROP_AUTOFOCUS, 0);
-    capArr[i].set(CV_CAP_PROP_EXPOSURE, 0);
-  }
-
-
+void CameraConfig::match_cams(){
+  // Note: the cameras in capArr must be opened
   int curCam = 0;
   int camNumToIdx = -1;
-  cv::Mat frames[4];
   int curCamShowing = 1;
   std::cout<<"NOTE: If this crashes at a specific cam move it to a diff port"<<std::endl;
   while(curCam < 3){
     int key = cv::waitKey(10);
-    if(key == 27) return 1; // stop capturing by pressing ES
+    if(key == 27) return; // stop capturing by pressing ES
     else if(key == 13){ // ENTER pressed, selecting camera for curCam
-      calibratedCamIdx[curCam] = curCamShowing;
+      camIdx[curCam] = curCamShowing;
       std::cout<<"cam "<<curCam<<" selected"<<std::endl;
       curCam++;
     } else if(key == 32){ // SPACE pressed, cycle through the cameras
@@ -118,13 +90,16 @@ int CameraConfig::build_camera_config(){
     }
     cv::imshow("Camera", frames[curCamShowing]);
   }
-
+}
+void CameraConfig::fix_cam_rot(){
+  // Note: the cameras in capArr must be opened
   int rotatedCamIdx[3]; 
-  curCam = 0;
+  int curCam = 0;
   int curRot = 0;
+
   while(curCam < 3){
     int key = cv::waitKey(10);
-    if(key == 27) return 1; // stop capturing by pressing ES
+    if(key == 27) return; // stop capturing by pressing ES
     else if(key == 13){ // ENTER pressed, selecting camera for curCam
       rotatedCamIdx[curCam] = curRot;
       std::cout<<"cam "<<curCam<<" has rotation: "<<curRot<<std::endl;
@@ -132,6 +107,7 @@ int CameraConfig::build_camera_config(){
       // reset params
       curCam++;
       curRot = 0;
+      if(curCam == 3) break;
     } else if(key == 32){ // SPACE pressed, cycle through the cameras
       curRot += 90;
       if(curRot == 360) curRot = 0;
@@ -139,7 +115,7 @@ int CameraConfig::build_camera_config(){
 
 
 
-    capArr[curCam].read(frames[curCam]);
+    capArr[camIdx[curCam]].read(frames[curCam]);
     cv::Mat displayFrame;
     // cv::rotate(frames[curCam],displayFrame, curRot);
 
@@ -159,7 +135,35 @@ int CameraConfig::build_camera_config(){
     }
     cv::imshow("Camera", displayFrame);
   }
-  std::cout<<"Top rot: "<<rotatedCamIdx[0]<<", Up rot: "<<rotatedCamIdx[1]<<", Right rot: "<<std::endl;
+  std::cout<<"Top rot: "<<rotatedCamIdx[0]<<", Up rot: "<<rotatedCamIdx[1]<<", Right rot: "<<rotatedCamIdx[2]<<std::endl;
+}
+
+
+int CameraConfig::build_camera_config(){
+  // Cycles through the cameras to find which one it is
+  // Also states how far the cameras are from the middle
+  double sideCamHeights = 1.4;
+  /*int numCams = countCameras();
+    if(numCams != 4){
+    std::cout<<"Four cameras need to be connected. The number of cameras are: "<<numCams<<std::endl;
+    return;
+    }*/
+  std::cout<<"4 Cameras connected. Camera Location Detection Running."<<std::endl;
+
+  // idx 0 = top, idx 1 = up, idx 2 = right
+
+  for(int i = 0 ; i < 4; i++){
+    if(!capArr[i].open(i)){
+      std::cout<<"can't open cam: "<<i<<std::endl;
+    }
+    capArr[i].set(CV_CAP_PROP_FRAME_WIDTH,640);
+    capArr[i].set(CV_CAP_PROP_FRAME_HEIGHT,480);
+    capArr[i].set(CV_CAP_PROP_AUTOFOCUS, 0);
+    capArr[i].set(CV_CAP_PROP_EXPOSURE, 0);
+  }
+  CameraConfig::match_cams();
+  CameraConfig::fix_cam_rot();
+
 
   // Using the top camera we need to calibrate the color:
 
@@ -199,7 +203,7 @@ int CameraConfig::build_camera_config(){
     if(key != -1){
       std::cout<<key<<std::endl;
     }
-    capArr[1].read(frames[1]); // We'll use the top camera to do the calibration
+    capArr[camIdx[1]].read(frames[1]); // We'll use the top camera to do the calibration
     putText(frames[1], "h_l: " + std::to_string(coneCali[0][0]), cv::Point2f(5,50), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,155), 2);
     putText(frames[1], "h_u: " + std::to_string(coneCali[1][0]), cv::Point2f(150,50), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,155), 2);
     putText(frames[1], "s_l: " + std::to_string(coneCali[0][1]), cv::Point2f(5,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,155), 2);
@@ -207,20 +211,22 @@ int CameraConfig::build_camera_config(){
     putText(frames[1], "v_l: " + std::to_string(coneCali[0][2]), cv::Point2f(5,150), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,155), 2);
     putText(frames[1], "v_u: " + std::to_string(coneCali[1][2]), cv::Point2f(150,150), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,155), 2);
 
-    cv::Mat coneMast = detect_cones(frames,coneCali);
+    cv::Mat coneMask = detect_cones(frames[1],coneCali);
     cv::imshow("Camera", frames[1]);
-    cv::imshow("Mask", coneMast);
+    cv::imshow("Mask", coneMask);
 
   }
 
 
   // Calibrate Ball
 
+  int ballCali[2][3] = {{105,80,80},{179,255,255}}; 
 
   double topDist = 1.5;
   double upDist = 2.0;
   double rightDist = 2.0;
 
+  // Why do we need to locations of the cones? We need to know how to dewarp
 
   // first line is the indexes of the camera
   // next we have the distance of the cameras to the middle
