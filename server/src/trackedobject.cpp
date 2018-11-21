@@ -11,6 +11,26 @@ void TrackedObject::add_pos(double time, Vector3 cur_pos){
     past_pos.push_back(pair);
 }
 
+Vector3 TrackedObject::predict_landing_point(){
+    /// Assume that x and z velocities will remain constant
+    // Zero out y velocity, assume that y position is zero at landing point
+    Vector3 vel = get_velocity(0);
+    vel.y = 0;
+
+    double landing_deltat = predict_landing_deltatime();
+
+    Vector3 pred_pos = past_pos[past_pos.size - 1] + (vel*landing_deltat);
+    pred_pos.y = 0;
+
+    return pred_pos;
+}
+
+double TrackedObject::predict_landing_deltatime(){
+    double cur_y = past_pos[past_pos.size - 1].second.y;
+    double deltat = cur_y/grav;
+    return deltat;
+}
+
 const std::vector<std::pair<double, Vector3>> TrackedObject::get_all_past_pos(){
     return past_pos;
 }

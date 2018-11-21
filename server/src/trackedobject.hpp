@@ -19,6 +19,9 @@ class TrackedObject{
         // Adds a position to the list of past positions
         void add_pos(double time, Vector3 cur_pos);
 
+        Vector3 predict_landing_point();
+        double predict_landing_deltatime();
+
         // Returns an immutable reference to past_pos
         const std::vector<std::pair<double, Vector3>> get_all_past_pos();
 
