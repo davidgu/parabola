@@ -1,5 +1,5 @@
-CC=g++
-CFLAGS=-std=c++11 -Ofast -march=native $(shell pkg-config --cflags --libs opencv)
+CC=g++-8
+CFLAGS=-Ofast -march=native $(shell pkg-config --cflags --libs opencv) -lboost_system -lboost_thread-mt -lboost_chrono-mt -lssl -lcrypto -I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib
 BDIR=build
 SDIR=src
 
