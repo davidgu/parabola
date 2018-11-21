@@ -15,6 +15,16 @@ const std::vector<std::pair<double, Vector3>> TrackedObject::get_all_past_pos(){
     return past_pos;
 }
 
+const std::string TrackedObject::get_all_past_pos_json(){
+    std::string ret = "{\"data\":[";
+    for(int i = past_pos.size - 1; i>=0; i--){
+        std::string object = "{\"time\":"+std::to_string(past_pos[i].first)+"\",\"pos\":";
+        object += past_pos[i].second.to_string();
+    }
+    ret += "]}";
+    return ret;
+}
+
 // Template to compare pairs
 bool time_pos_compare(const std::pair<double, Vector3> &a,const std::pair<double, Vector3> &b){
     return a.first<b.first;

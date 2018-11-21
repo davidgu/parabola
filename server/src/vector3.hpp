@@ -4,12 +4,15 @@
 #include <iostream>
 #include <stdexcept>
 #include <cmath>
+#include <string>
 
 class Vector3{
   public:
     double x, y, z;
     Vector3(double a, double b, double c);
     Vector3();
+    std::string to_string();
+    std::string to_json();
 
     static double dot(const Vector3 a, const Vector3 b);
     static Vector3 proj(const Vector3 a, const Vector3 b);
