@@ -23,10 +23,10 @@ class TrackedObject{
         double predict_landing_deltatime();
 
         // Returns an immutable reference to past_pos
-        const std::vector<std::pair<double, Vector3>> get_all_past_pos();
+        const std::vector<std::pair<double, Vector3>> get_all_past_tvpair();
 
         // Gives you all past positions as a json
-        const std::string get_all_past_pos_json();
+        const std::string get_all_past_tvpair_json();
 
         // Get the position of the ball closest to abstime
         // abstime refers to seconds elapsed since simulation start

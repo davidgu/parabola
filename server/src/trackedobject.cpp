@@ -31,11 +31,11 @@ double TrackedObject::predict_landing_deltatime(){
     return deltat;
 }
 
-const std::vector<std::pair<double, Vector3>> TrackedObject::get_all_past_pos(){
+const std::vector<std::pair<double, Vector3>> TrackedObject::get_all_past_tvpair(){
     return past_pos;
 }
 
-const std::string TrackedObject::get_all_past_pos_json(){
+const std::string TrackedObject::get_all_past_tvpair_json(){
     std::string ret = "{\"data\":[";
     for(int i = past_pos.size - 1; i>=0; i--){
         std::string object = "{\"time\":"+std::to_string(past_pos[i].first)+"\",\"pos\":";
