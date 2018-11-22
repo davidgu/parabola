@@ -5,9 +5,8 @@
 
 using namespace cv;
 
-// Recalibrate these camera intrinsics. These are not accurate.
-const Mat cameraMatrix = (Mat1d(3, 3)<< 4.6618874961590114e+02, 0, 320, 0, 4.6618874961590114e+02, 213, 0, 0, 1);
-const Mat distortionCoefficients = (Mat1d(1, 5)<< -7.6634604887242289e-02, 2.4678415075705742e-01, -5.9084432300489159e-03, 8.1790420843563837e-04, -2.9210824264458785e-01);
+const Mat cameraMatrix = (Mat1d(3, 3)<< 4.4740797894345377e+02, 0.0, 320.0, 0.0, 4.4740797894345377e+02, 213.0, 0.0, 0.0, 1.0);
+const Mat distortionCoefficients = (Mat1d(1, 5)<< 1.7657493713843387e-02, -1.6646113914955049e-01, 0.0, 0.0, 2.6525645359464572e-01); 
 
 Mat projMat1, projMat2;
 
