@@ -10,6 +10,7 @@
 class TrackedObject{
     private:
         const double grav = 9.81;
+        const double floor_loc = -1.0;
         const Vector3 gravv = Vector3(0.0, -grav, 0.0);
         // Stores <time, position>
         std::vector<std::pair<double, Vector3>> past_pos;
@@ -33,6 +34,9 @@ class TrackedObject{
         // abstime refers to seconds elapsed since simulation start
         Vector3 get_tpos(double abstime);
 
+        // returns the amount of time before the object hits the floor
+        double quadratic_formula(Vector3 v1, Vector3 cur_pos);
+
         // Predict the position of the ball deltat seconds from now
         // Negative deltat will return predicted times in the past.
         // Negative deltat is not yet implemented.
@@ -40,7 +44,7 @@ class TrackedObject{
         
         // Recorded positions from now on should be contributing
         // to the predicted location of the object
-        bool start_prediction(double max_velocity = 0.5);
+        bool start_prediction(double min_velocity = 0.5);
 
         // Recorded positions from now on should not be contributing
         // to the predicted location of the object

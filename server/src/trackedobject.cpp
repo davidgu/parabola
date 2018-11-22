@@ -1,4 +1,5 @@
 #include "trackedobject.hpp"
+#include <math.h> 
 
 // Default constructor doesn't do anything
 TrackedObject::TrackedObject(){
@@ -70,23 +71,25 @@ Vector3 TrackedObject::get_tpos(double abstime){
     return ppos;
 }
 
-double quadratic_formula(Vector3 v1, Vector3 cur_pos){
-  double a = 0.5*-grav;
+double TrackedObject::quadratic_formula(Vector3 v1, Vector3 cur_pos){
+  double a = 0.5*-TrackedObject::grav;
   double b = v1.y; // We are only interested in the y-component of the velocity
-  double c = -floor + cur_pos;
+  double c = -floor_loc + cur_pos.y;
 
   double discriminant = b*b - 4.0*a*c;
-  if(determinant < 0) throw std::logic_error("no solutions exist for the predicted time");
-  double ans1 = (-b + math.sqrt(discriminant))/(2.0*a);
-  double ans2 = (-b - math.sqrt(discriminant))/(2.0*a);
+  if(discriminant < 0) throw std::logic_error("no solutions exist for the predicted time");
+  double ans1 = (-b + sqrt(discriminant))/(2.0*a);
+  double ans2 = (-b - sqrt(discriminant))/(2.0*a);
   if(ans1 > 0) return ans1;
   if(ans2 > 0) return ans2;
   else std::cout<<"Found no answer to the prediction / you are already on the floor"<<std::endl;
+  return -99999;
 }
 
 
-bool start_prediction(double min_velocity){
-  if(get_velocity(0) > min_velocity) return 1;
+bool TrackedObject::start_prediction(double min_velocity){
+  if(Vector3::magnitude(get_velocity(0)) > min_velocity) return true;
+  return false;
 }
 
 // This version of start_prediction uses a range instead. We should test both
@@ -94,24 +97,25 @@ bool start_prediction(double min_velocity){
 
   int vec_size = past_pos.size();
   if(!(past_pos.size()>=2)){
-    int num_consider = min(consider_last_n_points, vec_size);
+    int num_consider = std::min(consider_last_n_points, vec_size);
 
     for(int i = vec_size - num_consider; i < vec_size - 1; i++){
-      if(get_avg_velocity(i,i+1) < min_velocity) return false;
+      if(Vector3::magnitude(get_avg_velocity(i,i+1)) < min_velocity) return false;
     }
     return true;
   }else{
     throw std::runtime_error("Cannot calculate velocity when past position vector is empty!");
   }
+  return false;
 }*/
 
-bool stop_prediction(int consider_last_n_points, double max_velocity){
+bool TrackedObject::stop_prediction(int consider_last_n_points, double max_velocity){
   int vec_size = past_pos.size();
   if(!(past_pos.size()>=2)){
-    int num_consider = min(consider_last_n_points, vec_size);
+    int num_consider = std::min(consider_last_n_points, vec_size);
 
     for(int i = vec_size - num_consider; i < vec_size - 1; i++){
-      if(get_avg_velocity(i,i+1) > max_velocity) return false;
+      if(Vector3::magnitude(get_avg_velocity(i,i+1)) > max_velocity) return false;
     }
     return true;
   }else{
@@ -119,16 +123,16 @@ bool stop_prediction(int consider_last_n_points, double max_velocity){
   }
 } 
 
-Vector3 get_avg_velocity(int start, int end){
+Vector3 TrackedObject::get_avg_velocity(int start, int end){
   int vec_size = past_pos.size();
-  if(end == -1) end = vec_size();
+  if(end == -1) end = vec_size;
   if(end < start) throw std::logic_error("Cannot get average velocity of a negative range");
-  if(end > vec_size) throw std::logic_error("Cannot return an average velocity over " + std::to_string(start) + " objects when only " + std::to_string(vec_size) + " objects have been recorded";
+  if(end > vec_size) throw std::logic_error("Cannot return an average velocity over " + std::to_string(start) + " objects when only " + std::to_string(vec_size) + " objects have been recorded");
   if(start < 0) throw std::logic_error("Cannot get the average of an element with a negative index!");
 
   double tot_time = 0.0;
-  Vector3 first_dist = past_pos[start];
-  Vector3 last_dist = past_pos[end - 1];
+  Vector3 first_dist = past_pos[start].second;
+  Vector3 last_dist = past_pos[end - 1].second;
 
   for(int i = start; i < end; i++){
     tot_time += past_pos[i].first;
