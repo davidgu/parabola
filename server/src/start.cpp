@@ -1,12 +1,9 @@
-#include <string>
 #include <fstream>
 #include "cameraconfig.hpp"
 #include "opencv2/opencv.hpp"
-#include "opencv2/tracking.hpp"
 #include "vector3.hpp"
 #include "vector2.hpp"
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <thread>
 
 using namespace cv;
 
@@ -141,14 +138,27 @@ Vector2 detect_ball(Mat frame){
   // you can make it return a vector 2 of the location of the ball:
   return Vector2(x,y);
 }
+
+void start_reading(int curCam){
+  Vector2 ballLoc;
+  while(true){
+    capArr[camIdx[curCam]].read(frames[curCam]);
+
+    ballLoc = detect_ball(frames[curCam]);
+    if(curCam == 0){ // This cameras needs to rotation dewarp
+      ballLoc = fix_top_angle(ballLoc);
+    }
+
+
+  }
+}
+
 int main(){
   // read from config file and initialize params
+  std::cout<<"Reading config file"<<std::endl;
   read_file();
 
-  // todo: do this for all 3 cameras
-  Mat frame;
-
-
+  std::cout<<"Initializing Cameras"<<std::endl;
   for(int i = 0 ; i < 4; i++){
     if(!capArr[i].open(i)){
       std::cout<<"can't open cam: "<<i<<std::endl;
@@ -160,18 +170,10 @@ int main(){
   }
 
 
-  Vector2 ballLoc;
-
-  while(true){
-  // put these on separate threads
-    for(int curCam = 0 ; curCam < 1 ; curCam++){
-      capArr[camIdx[curCam]].read(frames[curCam]);
-
-      ballLoc = detect_ball(frames[curCam]);
-      if(curCam == 0){ // This cameras needs to rotation dewarp
-        ballLoc = fix_top_angle(ballLoc);
-      }
-    }
+  std::cout<<"Reading Frames"<<std::endl;
+  for(int curCam = 0 ; curCam < 1 ; curCam++){
+    std::thread c1(start_reading,curCam);
+    std::thread c2(start_reading,curCam);
+    std::thread c3(start_reading,curCam);
   }
-
 }
