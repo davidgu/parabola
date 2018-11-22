@@ -108,6 +108,8 @@ Mat findBiggestBlob(Mat & matImage){
 Vector2 detect_ball(Mat frame, bool *success){
   //GaussianBlur( frame, frame, Size(11, 11), 4, 4);
 
+  frame = frame +  Scalar(-150, -150, -150);
+  frame.convertTo(frame, -1, 1.5, 0); //increase the contrast by the middle number
   Mat hsv, hsv2;
   cvtColor(frame, hsv, CV_BGR2HSV);
   hsv.convertTo(hsv2, -1, 2, 0); 
@@ -161,16 +163,16 @@ Vector2 detect_ball(Mat frame, bool *success){
   return Vector2(x,y);
 }
 
-Vector2 cam_read_frame_pos(int idx){
+Vector2 cam_read_frame_pos(int idx, bool* success){
   Vector2 ballLoc;
   capArr[camIdx[idx]].read(frames[idx]);
   bool detectSuccess = false;
   ballLoc = detect_ball(frames[idx], &detectSuccess);
   if(detectSuccess){
-    std::cout << "Camera "<< idx << ": DETECTED"<<std::endl;
+    *success = true;
   }
   else{
-    std::cout << "Camera "<< idx << ": NOT DETECTED"<<std::endl;
+    *success = false;
   }
   return ballLoc;
 }
@@ -209,8 +211,9 @@ int main(){
     if(THREE_CAMERA){
       clock_t start = clock();
 
+      bool success = false;
       for(int i = 0; i < 3; i ++){
-        Vector2 bpos = cam_read_frame_pos(i);
+        Vector2 bpos = cam_read_frame_pos(i, &success);
         if(i == 0){
           bpos = correct_image_angle(bpos);
         }
@@ -227,20 +230,22 @@ int main(){
     }
     // This is the two camera case
     else{
-      clock_t start = clock();
-
+      bool success = false;
       for(int i = 0; i < 2; i ++){
-        Vector2 bpos = cam_read_frame_pos(i);
+        Vector2 bpos = cam_read_frame_pos(i, &success);
+        // If detection fails for one of the cameras, skip this set
+        if(!success){
+          break;
+        }
         lines[i] = build_vector(i, camWPoss[i], bpos);
       }
-      Vector3 ball_pred_pos = find_intersection(lines[0], lines[1]);
-      tobject.add_pos(simClock.get_abstime(), ball_pred_pos);
 
-      clock_t end = clock();
-      clock_t elapsed = end - start;
-
-      std::cout << ball_pred_pos << std::endl;
-      std::cout << "Time Elapsed: "<< elapsed << std::endl;
+      // If all cameras sucessfully detected the ball
+      if(success){
+        Vector3 ball_pred_pos = find_intersection(lines[0], lines[1]);
+        tobject.add_pos(simClock.get_abstime(), ball_pred_pos);
+        std::cout << ball_pred_pos << std::endl;
+      }
     }
   }
 }

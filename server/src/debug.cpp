@@ -19,7 +19,7 @@ Mat detect_cones(Mat frame){
   Mat hsv;
   //note hsv range is from [0,179], [0,255], [0,255] (Hue, Saturation, Value)
   cvtColor(frame, hsv, CV_BGR2HSV);
-  Scalar orange_lower(1,150,200); // try 5 and 10 for the first index . that works pretty well // 2 200, 150
+  Scalar orange_lower(1,180,210); // try 5 and 10 for the first index . that works pretty well // 2 200, 150
   Scalar orange_upper(15,255,255);
   Mat orange_mask;
   inRange(hsv, orange_lower, orange_upper,orange_mask);
@@ -58,6 +58,9 @@ Mat findBiggestBlob(Mat & matImage){
 void custom_process_frame(Mat frame){
 
   //note hsv range is from [0,179], [0,255], [0,255] (Hue, Saturation, Value)
+  GaussianBlur( frame, frame, Size(11, 11), 4, 4 );
+  //frame = frame +  Scalar(-150, -150, -150);
+  //frame.convertTo(frame, -1, 1.5, 0); //increase the contrast by the middle number
   Mat hsv, hsv2;
   cvtColor(frame, hsv, CV_BGR2HSV);
   hsv.convertTo(hsv2, -1, 2, 0); //increase the contrast by the middle number
@@ -79,7 +82,7 @@ void custom_process_frame(Mat frame){
 
   Mat final_image;
   purple_mask.convertTo(final_image, -1, 4, 0); //increase the contrast by the middle number
-
+  final_image = detect_cones(frame);
   //remove the cones from the mask
   Mat coneMask = detect_cones(frame);
   //imshow("asd",coneMask);
@@ -89,7 +92,7 @@ void custom_process_frame(Mat frame){
   dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1);
   //we don't want to fill in the contours here because it might cover up the ball
   coneMask = ~coneMask;
-  final_image = final_image & coneMask;
+  //final_image = final_image & coneMask;
 
   //start analyzing the image
   final_image = findBiggestBlob(final_image);
@@ -109,7 +112,7 @@ void custom_process_frame(Mat frame){
   if(x != -2147483648){
     // std::cout << Mat(p1).at<int>(0,1) << std::endl;
   }
-  circle(frame, p1, 5, Scalar(128,0,0), -1); // plot the point of the ball
+  circle(frame, p1, 6, Scalar(256,256,256), -1); // plot the point of the ball
 
   imshow("asdsa",frame);
 
