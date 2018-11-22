@@ -22,7 +22,7 @@ std::string Vector3::to_json(){
   std::string y_str = std::to_string(y);
   std::string z_str = std::to_string(z);
 
-  std::string ret = "{\"x\":\""+x_str+"\", \"y\":\""+y_str+", \"z\":\""+z_str+"\"}";
+  std::string ret = "{\"x\":"+x_str+", \"y\":"+y_str+", \"z\":"+z_str+"}";
   return ret;
 }
 
@@ -60,6 +60,14 @@ Vector3 Vector3::cross(const Vector3 a, const Vector3 b){
 
 double Vector3::magnitude(const Vector3 a){
   return sqrt((a.x * a.x) + (a.y * a.y) + (a.z * a.z));
+}
+
+Vector3 Vector3::point3f_to_vector3(cv::Point3f in){
+  return Vector3(
+    (double)in.x,
+    (double)in.y,
+    (double)in.z
+  );
 }
 
 Vector3 Vector3::proj(const Vector3 a, const Vector3 b){

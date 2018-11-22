@@ -1,9 +1,4 @@
-
-#include <boost/beast/core.hpp>
-#include <boost/beast/websocket.hpp>
-#include <boost/asio/bind_executor.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/asio/ip/tcp.hpp>
+#include <fstream>
 #include <algorithm>
 #include <cstdlib>
 #include <functional>
@@ -13,8 +8,28 @@
 #include <thread>
 #include <vector>
 
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
+#include <boost/asio/bind_executor.hpp>
+#include <boost/asio/strand.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include "opencv2/opencv.hpp"
+
+#include "detector.hpp"
+#include "simclock.hpp"
 #include "trackedobject.hpp"
 
+
+//
+//  Global Variables
+//
+TrackedObject tobject;
+TrackedObject *SERVER_TRACKEDOBJECT_PTR;
+SimClock simClock;
+bool DEBUG = false;
+
+
+// Server code
 using tcp = boost::asio::ip::tcp;
 namespace websocket = boost::beast::websocket;
 
@@ -22,9 +37,6 @@ namespace websocket = boost::beast::websocket;
 //  global variable referencing the trackedobject pointer. Futhermore, only a
 //  single TrackedObject can be used at a time.
 
-// TODO: Refactor and remove this global variable
-TrackedObject *SERVER_TRACKEDOBJECT_PTR;
-const bool DEBUG = true;
 
 // Report a failure
 void
@@ -117,14 +129,20 @@ class session : public std::enable_shared_from_this<session> {
             else if(SERVER_TRACKEDOBJECT_PTR != nullptr){
                 if(req == "curpos"){
                     int ppos_len = (int)SERVER_TRACKEDOBJECT_PTR->get_all_past_tvpair().size();
-                    ret = SERVER_TRACKEDOBJECT_PTR->get_tvpair_json(ppos_len - 1);
+                    if(ppos_len != 0){
+                        ret = "curpos#";
+                        ret += SERVER_TRACKEDOBJECT_PTR->get_tvpair_json(ppos_len - 1);
+                    }
+                    else{
+                        ret = "curpos#error";
+                    }
                 }
                 else if(req == "all"){
-                    ret = SERVER_TRACKEDOBJECT_PTR->get_all_past_tvpair_json();
+                    ret = "all:"+SERVER_TRACKEDOBJECT_PTR->get_all_past_tvpair_json();
                 }
 
                 else if(req == "predictland"){
-                    ret = SERVER_TRACKEDOBJECT_PTR->predict_landing_point().to_json();
+                    ret = "predictland:"+SERVER_TRACKEDOBJECT_PTR->predict_landing_point().to_json();
                 }
 
                 else if(req == "predictpath"){
@@ -267,17 +285,53 @@ void init_server(std::string addr, int por, int threa, TrackedObject *tobj){
     ioc.run();
 }
 
-int main(int argc, char* argv[]) {
-    // Check command line arguments.
-    if (argc != 4)
-    {
-        std::cerr <<
-            "Usage: websocketserver <address> <port> <threads>\n" <<
-            "Example:\n" <<
-            "    websocketserver 0.0.0.0 8080 1\n";
-        return EXIT_FAILURE;
-    }
-    init_server(argv[1], std::atoi(argv[2]), std::atoi(argv[3]), nullptr);
+int main(){
+    //
+    //  Initialize detector
+    //
+    Detector detector = Detector(
+        false,
+        (Mat1d(3, 3)<< 4.4740797894345377e+02, 0.0, 320.0, 0.0, 4.4740797894345377e+02, 213.0, 0.0, 0.0, 1.0),
+        (Mat1d(1, 5)<< 1.7657493713843387e-01, -1.6646113914955049e-01, 0.0, 0.0, 2.6525645359464572e-01)
+    );
 
-    return EXIT_SUCCESS;
+    detector.configure_cameras();
+    // No saved data exists
+    if(detector.load_configuration("cpm1.xml", "cpm2.xml", "vo.xml")==0){
+        std::cout << "No configuration files found!" << std::endl;
+        detector.calibrate(0, 1);
+        detector.calibrate_vorigin(0, 1);
+        detector.save_configuration("cpm1.xml", "cpm2.xml", "vo.xml");
+    }
+    // Virtual origin data does not exist 
+    else if(detector.load_configuration("cpm1.xml", "cpm2.xml", "vo.xml") == 1){
+        std::cout << "Virtual origin configuration not found!" << std::endl;
+        detector.calibrate_vorigin(0, 1);
+        detector.save_configuration("cpm1.xml", "cpm2.xml", "vo.xml");
+    }
+    // All data exists
+    else if(detector.load_configuration("cpm1.xml", "cpm2.xml", "vo.xml") == 2){
+        std::cout << "All configuration found!" << std::endl;
+        // Do nothing
+    }
+    else{
+        // Fail if an invalid load configuration value is returned
+        assert(false);
+    }
+
+    //
+    //  Initialize server and start tracking
+    //
+    std::thread t1(init_server,"127.0.0.1", 8080, 1, &tobject);
+    simClock = SimClock();
+    while(true){
+        cv::Point3f curPoint = detector.get_normalized_position();
+        // If the detected point is valid, do stuff with it
+        if(curPoint.x != std::numeric_limits<float>::max()){
+            Vector3 curPointv = Vector3::point3f_to_vector3(curPoint);
+            tobject.add_pos(simClock.get_abstime(), curPointv);
+            std::cout << "Added (" << simClock.get_abstime() << "," << curPointv << ") to tobject" <<std::endl;
+        }
+    }
 }
+

@@ -45,8 +45,9 @@ const std::string TrackedObject::get_all_past_tvpair_json(){
 }
 
 const std::string TrackedObject::get_tvpair_json(int index){
-    std::string str = "{\"time\":"+std::to_string(past_pos[index].first)+"\",\"pos\":";
-    str += past_pos[index].second.to_string();
+    std::string str = "{\"time\":"+std::to_string(past_pos[index].first)+",\"pos\":";
+    str += past_pos[index].second.to_json();
+    str += "}";
     return str;
 }
 

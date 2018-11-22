@@ -6,6 +6,8 @@
 #include <cmath>
 #include <string>
 
+#include "opencv2/opencv.hpp"
+
 class Vector3{
   public:
     double x, y, z;
@@ -19,6 +21,7 @@ class Vector3{
     static Vector3 proj(const Vector3 a, const Vector3 b);
     static Vector3 perp(const Vector3 a, const Vector3 b);
     static double magnitude(const Vector3 a);
+    static Vector3 point3f_to_vector3(cv::Point3f in);
 
     friend Vector3 operator+(const Vector3& a, const Vector3& b);
     friend Vector3 operator-(const Vector3& a, const Vector3& b);

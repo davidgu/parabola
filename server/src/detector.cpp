@@ -1,24 +1,14 @@
-#include <iostream>
-#include <fstream>
-
-#include "opencv2/calib3d.hpp"
-#include "opencv2/opencv.hpp"
+#include "detector.hpp"
 
 using namespace cv;
 
-const bool DAYTIME = true;
+Detector::Detector(bool daytime, Mat cameraMatrix, Mat distortionCoefficients){
+    DAYTIME = daytime;
+    this->cameraMatrix = cameraMatrix;
+    this->distortionCoefficients = distortionCoefficients;
+}
 
-const Mat cameraMatrix = (Mat1d(3, 3)<< 4.4740797894345377e+02, 0.0, 320.0, 0.0, 4.4740797894345377e+02, 213.0, 0.0, 0.0, 1.0);
-const Mat distortionCoefficients = (Mat1d(1, 5)<< 1.7657493713843387e-01, -1.6646113914955049e-01, 0.0, 0.0, 2.6525645359464572e-01); 
-
-Mat projMat1, projMat2;
-Point3f virtualOrigin;
-float scale;
-
-VideoCapture capArr[4];
-int idxToCam[4];
-
-Mat detect_cones(Mat frame){
+Mat Detector::detect_cones(Mat frame){
   Mat hsv;
   cvtColor(frame, hsv, CV_BGR2HSV);
   Scalar orange_lower(1,180,210); // try 5 and 10 for the first index . that works pretty well // 2 200, 150
@@ -28,7 +18,7 @@ Mat detect_cones(Mat frame){
   return orange_mask;
 }
 
-Mat findBiggestBlob(Mat & matImage){
+Mat Detector::findBiggestBlob(Mat & matImage){
   int largest_area=0;
   int largest_contour_index=0;
 
@@ -53,7 +43,7 @@ Mat findBiggestBlob(Mat & matImage){
 }
 
 // Detect cones function optimized for the daytime
-Mat detect_cones_day(Mat frame){
+Mat Detector::detect_cones_day(Mat frame){
   GaussianBlur( frame, frame, Size(9, 9), 4, 4 );
   frame = frame +  Scalar(-130, -130, -130);
 
@@ -71,14 +61,14 @@ Mat detect_cones_day(Mat frame){
   return orange_mask;
 }
 
-Point2f detect_ball(Mat frame, bool *success){
+Point2f Detector::detect_ball(Mat frame, bool *success){
   GaussianBlur(frame, frame, Size(5, 5), 4, 4);
   Mat final_image;
   if(DAYTIME){
     final_image = detect_cones_day(frame);
   }
   else{
-    final_image = detect_cones_day(frame);
+    final_image = detect_cones(frame);
   }
   final_image = findBiggestBlob(final_image);
 
@@ -106,7 +96,7 @@ Point2f detect_ball(Mat frame, bool *success){
   return Point2f(x,y);
 }
 
-void configure_cameras(){
+void Detector::configure_cameras(){
   Mat frame;
   for(int i = 0; i<4; i++){
     if(!capArr[i].open(i)){
@@ -150,7 +140,7 @@ void configure_cameras(){
   cv::waitKey(1);
 }
 
-std::pair<Mat,Mat> capture_frames(VideoCapture cam1, VideoCapture cam2){
+std::pair<Mat,Mat> Detector::capture_frames(VideoCapture cam1, VideoCapture cam2){
     Mat frame1, frame2;
     Mat frame1overlay, frame2overlay;
 
@@ -162,7 +152,7 @@ std::pair<Mat,Mat> capture_frames(VideoCapture cam1, VideoCapture cam2){
         frame2overlay = frame2.clone();
 
         // Make imshow work
-        int key = waitKey(10);
+        int key = waitKey(30);
 
         // Detect ball in order to draw overlay if ball is being tracked
         detect_ball(frame1overlay, nullptr);
@@ -179,7 +169,7 @@ std::pair<Mat,Mat> capture_frames(VideoCapture cam1, VideoCapture cam2){
     }
 }
 
-Point3f triangulate(Point2f camera1Point, Point2f camera2Point){
+Point3f Detector::triangulate(Point2f camera1Point, Point2f camera2Point){
     cv::Mat pnt3D(4,1,CV_64F);
     std::vector<Point2d> cam1pnts = {camera1Point};
     std::vector<Point2d> cam2pnts = {camera2Point};
@@ -192,7 +182,10 @@ Point3f triangulate(Point2f camera1Point, Point2f camera2Point){
 }
 
 // Gets the projection matrices for the two cameras
-void calibrate(VideoCapture cam1, VideoCapture cam2){
+void Detector::calibrate(int camidx1, int camidx2){
+    VideoCapture cam1 = capArr[idxToCam[camidx1]];
+    VideoCapture cam2 = capArr[idxToCam[camidx2]];
+
     Mat frames1[4];
     Mat frames2[4];
     
@@ -205,10 +198,46 @@ void calibrate(VideoCapture cam1, VideoCapture cam2){
     Mat rvec1, rvec2, tvec1, tvec2;
 
     std::vector<Point3f> worldCoords = {
-        Point3f(0,0,0),
-        Point3f(0,0,1),
-        Point3f(0,-1,0),
+        // 1  2  3
+        // 4  5  6
+        // 7  8  9
+        //   cam
+        
+        // Point 1
+        Point3f(1,0,-1),
+        Point3f(1,-1,-1),
+
+        // Point 2
+        Point3f(0,0,-1),
+        Point3f(0,-1,-1),
+
+        // Point 3
+        Point3f(-1,0,-1),
+        Point3f(-1,-1,-1),
+
+        // Point 4
         Point3f(1,0,0),
+        Point3f(1,-1,0),
+
+        // Point 5
+        Point3f(0,0,0),
+        Point3f(0,-1,0),
+
+        // Point 6
+        Point3f(-1,0,0),
+        Point3f(-1,-1,0),
+
+        // Point 7
+        Point3f(1,0,1),
+        Point3f(1,-1,1),
+
+        // Point 8
+        Point3f(0,0,1),
+        Point3f(0,-1,1),
+
+        // Point 9
+        Point3f(-1,0,1),
+        Point3f(-1,-1,1),
     };
 
     std::vector<Point2f> frame1Coords;
@@ -217,26 +246,91 @@ void calibrate(VideoCapture cam1, VideoCapture cam2){
     std::pair<Mat, Mat> fpair;
     std::cout<<"Coordinates will be expressed as (X, Y, Z)"<<std::endl;
     std::cout<<"Make sure the ball is visible by both cameras at all times."<<std::endl;
-    std::cout<<"Bring the ball to (0, 0, 0) and press the space bar"<<std::endl;
+
+    std::cout<<"Point 1 UP"<<std::endl;
     fpair = capture_frames(cam1, cam2);
     frame1Coords.push_back(detect_ball(fpair.first, nullptr));
     frame2Coords.push_back(detect_ball(fpair.second, nullptr));
-    cam1Origin = (detect_ball(fpair.first, nullptr));
-    cam2Origin = (detect_ball(fpair.second, nullptr));
-    std::cout<<"Bring the ball to (0, 0, 1) and press the space bar"<<std::endl;
+    std::cout<<"Point 1 DOWN"<<std::endl;
     fpair = capture_frames(cam1, cam2);
     frame1Coords.push_back(detect_ball(fpair.first, nullptr));
     frame2Coords.push_back(detect_ball(fpair.second, nullptr));
-    std::cout<<"Bring the ball to (0, -1, 0) and press the space bar"<<std::endl;
+
+    std::cout<<"Point 2 UP"<<std::endl;
     fpair = capture_frames(cam1, cam2);
     frame1Coords.push_back(detect_ball(fpair.first, nullptr));
     frame2Coords.push_back(detect_ball(fpair.second, nullptr));
-    std::cout<<"Bring the ball to (1, 0, 0) and press the space bar"<<std::endl;
+    std::cout<<"Point 2 DOWN"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+
+    std::cout<<"Point 3 UP"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+    std::cout<<"Point 3 DOWN"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+
+    std::cout<<"Point 4 UP"<<std::endl;
     fpair = capture_frames(cam1, cam2);
     frame1Coords.push_back(detect_ball(fpair.first, nullptr));
     frame2Coords.push_back(detect_ball(fpair.second, nullptr));
     cam1XPlus1 = (detect_ball(fpair.first, nullptr));
     cam2XPlus1 = (detect_ball(fpair.second, nullptr));
+    std::cout<<"Point 4 DOWN"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+
+    std::cout<<"Point 5 UP"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+    cam1Origin = (detect_ball(fpair.first, nullptr));
+    cam2Origin = (detect_ball(fpair.second, nullptr));
+    std::cout<<"Point 5 DOWN"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+
+    std::cout<<"Point 6 UP"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+    std::cout<<"Point 6 DOWN"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+
+    std::cout<<"Point 7 UP"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+    std::cout<<"Point 7 DOWN"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+
+    std::cout<<"Point 8 UP"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+    std::cout<<"Point 8 DOWN"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+
+    std::cout<<"Point 9 UP"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+    std::cout<<"Point 9 DOWN"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    frame1Coords.push_back(detect_ball(fpair.first, nullptr));
+    frame2Coords.push_back(detect_ball(fpair.second, nullptr));
 
     // Obtain rvec and tvec
     solvePnP(worldCoords, frame1Coords, cameraMatrix, distortionCoefficients,rvec1, tvec1);
@@ -258,7 +352,10 @@ void calibrate(VideoCapture cam1, VideoCapture cam2){
 
 }
 
-void calibrate_vorigin(VideoCapture cam1, VideoCapture cam2){
+void Detector::calibrate_vorigin(int camidx1, int camidx2){
+    VideoCapture cam1 = capArr[idxToCam[camidx1]];
+    VideoCapture cam2 = capArr[idxToCam[camidx2]];
+
     std::vector<Point2f> frame1Coords;
     std::vector<Point2f> frame2Coords;
 
@@ -294,14 +391,13 @@ void calibrate_vorigin(VideoCapture cam1, VideoCapture cam2){
     }
 }
 
-bool fileExists(const std::string name)
-{
+bool Detector::fileExists(const std::string name){
     std::ifstream infile(name.c_str());
     return infile.good();
 }
 
 // Checks if a camera configuration exists, and loads it if it does
-int load_configuration(const std::string camProjMat1, 
+int Detector::load_configuration(const std::string camProjMat1, 
                         const std::string camProjMat2,
                         const std::string vOrigin){
     int retStatus = 0;
@@ -329,7 +425,7 @@ int load_configuration(const std::string camProjMat1,
 
 // Saves camera projection matrices and virtual origin data
 // Does not overwrite
-void save_configuration(const std::string camProjMat1,
+void Detector::save_configuration(const std::string camProjMat1,
                         const std::string camProjMat2,
                         const std::string vOrigin){
     if(!fileExists(camProjMat1)){
@@ -347,7 +443,7 @@ void save_configuration(const std::string camProjMat1,
     }
 }
 
-void write_point_data(const std::string fileName, std::vector<Point2f> points){
+void Detector::write_point_data(const std::string fileName, std::vector<Point2f> points){
     FileStorage fs(fileName, FileStorage::WRITE);
     fs << "data";
     for (int i = 0; i < points.size(); ++i)
@@ -356,55 +452,22 @@ void write_point_data(const std::string fileName, std::vector<Point2f> points){
     }
 }
 
-int main(){
-    configure_cameras();
-    // No saved data exists
-    if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml")==0){
-        std::cout << "No configuration files found!" << std::endl;
-        calibrate(capArr[idxToCam[0]], capArr[idxToCam[1]]);
-        calibrate_vorigin(capArr[idxToCam[0]], capArr[idxToCam[1]]);
-        save_configuration("cpm1.xml", "cpm2.xml", "vo.xml");
-    }
-    // Virtual origin data does not exist 
-    else if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml") == 1){
-        std::cout << "Virtual origin configuration not found!" << std::endl;
-        calibrate_vorigin(capArr[idxToCam[0]], capArr[idxToCam[1]]);
-        save_configuration("cpm1.xml", "cpm2.xml", "vo.xml");
-    }
-    // All data exists
-    else if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml") == 2){
-        std::cout << "All configuration found!" << std::endl;
-        // Do nothing
-    }
-    else{
-        // Fail if an invalid load configuration value is returned
-        assert(false);
-    }
-
+Point3f Detector::get_normalized_position(){
     Mat frame1, frame2;
-    std::vector<Point2f> c1points;
-    std::vector<Point2f> c2points;
+    capArr[idxToCam[0]].read(frame1);
+    capArr[idxToCam[1]].read(frame2);
 
-    FileStorage fs("camdata.xml", FileStorage::WRITE);
-    for(;;){
-        capArr[idxToCam[0]].read(frame1);
-        capArr[idxToCam[1]].read(frame2);
-        bool success = false;
-        Point2f p1 = detect_ball(frame1, &success);
+    bool success = false;
+    Point2f p1 = detect_ball(frame1, &success);
+    if(success){
+        Point2f p2 = detect_ball(frame2, &success);
         if(success){
-            Point2f p2 = detect_ball(frame2, &success);
-            if(success){
-                c1points.push_back(p1);
-                c2points.push_back(p2);
-                Point3f predict = scale*(triangulate(p1, p2)-virtualOrigin);
-                std::cout << "Virtual origin: "<<virtualOrigin;
-                std::cout << "Predicted location is: ("<<predict.x<<", "<<predict.y<<", "<<predict.z<<")"<<std::endl;
-                int key = cv::waitKey(10);
-                if(key == 32){
-                    write_point_data("c1pts.xml", c1points);
-                    write_point_data("c2pts.xml", c2points);
-                }
-            }
+            Point3f predict = scale*(triangulate(p1, p2)-virtualOrigin);
+            return predict;
         }
     }
+    return Point3f(std::numeric_limits<float>::max(),
+                    std::numeric_limits<float>::max(),
+                    std::numeric_limits<float>::max()
+                );
 }
