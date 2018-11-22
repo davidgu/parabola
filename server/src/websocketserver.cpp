@@ -24,6 +24,7 @@ namespace websocket = boost::beast::websocket;
 
 // TODO: Refactor and remove this global variable
 TrackedObject *SERVER_TRACKEDOBJECT_PTR;
+const bool DEBUG = true;
 
 // Report a failure
 void
@@ -94,9 +95,28 @@ class session : public std::enable_shared_from_this<session> {
             std::cout << "Received: " <<  req << std::endl;
 
             std::string ret;
-            if(SERVER_TRACKEDOBJECT_PTR != nullptr){
+
+            if(DEBUG){
                 if(req == "curpos"){
-                    int ppos_len = SERVER_TRACKEDOBJECT_PTR -> get_all_past_tvpair().size;
+                    ret = "curpos:Returning curpos!";
+                }
+                else if(req == "all"){
+                    ret = "all:Returning all!";
+                }
+
+                else if(req == "predictland"){
+                    ret = "predictland:Returning landing location!";
+                }
+                else if(req == "predictpath"){
+                    ret = "predictpath:Returning predicted path!";
+                }
+                else{
+                    ret = "error:Invalid Request!";
+                }
+            }
+            else if(SERVER_TRACKEDOBJECT_PTR != nullptr){
+                if(req == "curpos"){
+                    int ppos_len = (int)SERVER_TRACKEDOBJECT_PTR->get_all_past_tvpair().size();
                     ret = SERVER_TRACKEDOBJECT_PTR->get_tvpair_json(ppos_len - 1);
                 }
                 else if(req == "all"){
