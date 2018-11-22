@@ -14,13 +14,18 @@ class CameraConfig{
         Vector3 position;
         cv::VideoCapture capArr[4];
 
+        double topDist = 1.5;
+        double upDist = 2.0;
+        double rightDist = 2.0;
+        double sideCamHeights = 1.4;
+
         // idx 0 = top, idx 1 = up, idx 2 = right
         int camIdx[3]; // Each index describes the cam number
         cv::Mat frames[4];
         int rotCamIdx[3];
         int coneCali[2][3] = {{1,150,200},{15,255,255}};
-        int ballCali1[2][3] = {{105,80,80},{1,255,255}};
-        int ballCali2[2][3] = {{105,80,80},{1,255,255}};
+        int ballCali1[2][3] = {{0,100,100},{10,255,255}};
+        int ballCali2[2][3] = {{105,80,80},{179,255,255}};
         double topRotTheta;        
 
     public:

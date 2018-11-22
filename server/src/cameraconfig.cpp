@@ -309,10 +309,10 @@ int CameraConfig::build_camera_config(){
     capArr[i].set(CV_CAP_PROP_EXPOSURE, 0);
   }
   CameraConfig::match_cams();
-  double topDist = 1.5;
-  double upDist = 2.0;
-  double rightDist = 2.0;
-  double sideCamHeights = 1.4;
+  topDist = 1.5;
+  upDist = 2.0;
+  rightDist = 2.0;
+  sideCamHeights = 1.4;
   CameraConfig::fix_cam_rot();
 
   // Using the top camera we need to calibrate the color:
@@ -343,8 +343,8 @@ int CameraConfig::build_camera_config(){
   std::cout<<"Saving Config File"<<std::endl;
   std::ofstream myfile;
     myfile.open ("config.txt");
-    myfile << camIdx[0]<<" "<<camIdx[1]<<" "<<camIdx[2]<<std::endl;
     myfile << topDist<<" "<<upDist<<" "<<rightDist<<" "<<sideCamHeights<<std::endl;
+    myfile << camIdx[0]<<" "<<camIdx[1]<<" "<<camIdx[2]<<std::endl;
     myfile << rotCamIdx[0]<<" "<<rotCamIdx[1]<<" "<<rotCamIdx[2]<<std::endl;
     myfile << coneCali[0][0]<<" "<<coneCali[0][1]<<" "<<coneCali[0][2]<<" "<<coneCali[1][0]<<" "<<coneCali[1][1]<<" "<<coneCali[1][2]<<std::endl;
     myfile << ballCali1[0][0]<<" "<<ballCali1[0][1]<<" "<<ballCali1[0][2]<<" "<<ballCali1[1][0]<<" "<<ballCali1[1][1]<<" "<<ballCali1[1][2]<<std::endl;
