@@ -6,10 +6,10 @@
 
 using namespace cv;
 
-const bool DAYTIME = false;
+const bool DAYTIME = true;
 
 const Mat cameraMatrix = (Mat1d(3, 3)<< 4.4740797894345377e+02, 0.0, 320.0, 0.0, 4.4740797894345377e+02, 213.0, 0.0, 0.0, 1.0);
-const Mat distortionCoefficients = (Mat1d(1, 5)<< 1.7657493713843387e-02, -1.6646113914955049e-01, 0.0, 0.0, 2.6525645359464572e-01); 
+const Mat distortionCoefficients = (Mat1d(1, 5)<< 1.7657493713843387e-01, -1.6646113914955049e-01, 0.0, 0.0, 2.6525645359464572e-01); 
 
 Mat projMat1, projMat2;
 Point3f virtualOrigin;
@@ -152,27 +152,30 @@ void configure_cameras(){
 
 std::pair<Mat,Mat> capture_frames(VideoCapture cam1, VideoCapture cam2){
     Mat frame1, frame2;
+    Mat frame1overlay, frame2overlay;
 
     for(;;){
         cam1.read(frame1);
         cam2.read(frame2);
 
+        frame1overlay = frame1.clone();
+        frame2overlay = frame2.clone();
+
         // Make imshow work
-        waitKey(1);
+        int key = waitKey(10);
 
         // Detect ball in order to draw overlay if ball is being tracked
-        detect_ball(frame1, nullptr);
-        detect_ball(frame2, nullptr);
+        detect_ball(frame1overlay, nullptr);
+        detect_ball(frame2overlay, nullptr);
 
-        int key = waitKey(1);
 
         // space bar
         if(key == 32){
             return std::pair<Mat, Mat>(frame1, frame2);
         }
 
-        imshow("Camera 1", frame1);
-        imshow("Camera 2", frame2);
+        imshow("Camera 1", frame1overlay);
+        imshow("Camera 2", frame2overlay);
     }
 }
 
@@ -337,7 +340,16 @@ void save_configuration(const std::string camProjMat1,
     }
     if(!fileExists(vOrigin)){
         FileStorage fs(vOrigin, FileStorage::WRITE);
-        fs << "data" << vOrigin;
+        fs << "data" << virtualOrigin;
+    }
+}
+
+void write_point_data(const std::string fileName, std::vector<Point2f> points){
+    FileStorage fs(fileName, FileStorage::WRITE);
+    fs << "data";
+    for (int i = 0; i < points.size(); ++i)
+    {
+        fs<<i<<points[i];
     }
 }
 
@@ -346,13 +358,13 @@ int main(){
     // No saved data exists
     if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml")==0){
         calibrate(capArr[idxToCam[0]], capArr[idxToCam[1]]);
-        calibrate_vorigin(capArr[idxToCam[0]], capArr[idxToCam[1]]))
-        save_configuration();
+        calibrate_vorigin(capArr[idxToCam[0]], capArr[idxToCam[1]]);
+        save_configuration("cpm1.xml", "cpm2.xml", "vo.xml");
     }
     // Virtual origin data does not exist 
     else if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml") == 1){
-        calibrate_vorigin(capArr[idxToCam[0]], capArr[idxToCam[1]]))
-        save_configuration();
+        calibrate_vorigin(capArr[idxToCam[0]], capArr[idxToCam[1]]);
+        save_configuration("cpm1.xml", "cpm2.xml", "vo.xml");
     }
     // All data exists
     else if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml") == 2){
@@ -364,6 +376,10 @@ int main(){
     }
 
     Mat frame1, frame2;
+    std::vector<Point2f> c1points;
+    std::vector<Point2f> c2points;
+
+    FileStorage fs("camdata.xml", FileStorage::WRITE);
     for(;;){
         capArr[idxToCam[0]].read(frame1);
         capArr[idxToCam[1]].read(frame2);
@@ -372,9 +388,16 @@ int main(){
         if(success){
             Point2f p2 = detect_ball(frame2, &success);
             if(success){
+                c1points.push_back(p1);
+                c2points.push_back(p2);
                 Point3f predict = scale*(triangulate(p1, p2)-virtualOrigin);
                 std::cout << "Virtual origin: "<<virtualOrigin;
                 std::cout << "Predicted location is: ("<<predict.x<<", "<<predict.y<<", "<<predict.z<<")"<<std::endl;
+                int key = cv::waitKey(10);
+                if(key == 32){
+                    write_point_data("c1pts.xml", c1points);
+                    write_point_data("c2pts.xml", c2points);
+                }
             }
         }
     }
