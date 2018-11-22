@@ -9,8 +9,8 @@
 
 Vector2 pnormalize_origin(Vector2 vec);
 
-std::pair <Vector3,Vector3> build_vector(int camIdx, Vector3 cam_wpos, 
-                                        Vector2 ball_ppos);
+std::pair <Vector3,Vector3> build_vector(int camIdx, double cam_pfocallength,
+                                        Vector3 cam_wpos, Vector2 ball_ppos);
 
 Vector3 closest_approach(const std::pair<Vector3, Vector3> l1,
                          const std::pair<Vector3, Vector3> l2);

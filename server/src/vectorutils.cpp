@@ -10,8 +10,8 @@ Vector2 pnormalize_origin(Vector2 vec){
     return normalized;
 }
 
-std::pair <Vector3,Vector3> build_vector(int camIdx, Vector3 cam_wpos, 
-                                        Vector2 ball_ppos){
+std::pair <Vector3,Vector3> build_vector(int camIdx, double cam_pfocallength,
+                                        Vector3 cam_wpos, Vector2 ball_ppos){
     // Returns the line vector representing the possible positions of the
     // detected ball in the format (point, direction)
     // wpos -> World Position
@@ -23,17 +23,17 @@ std::pair <Vector3,Vector3> build_vector(int camIdx, Vector3 cam_wpos,
     switch(camIdx){
         // Top camera
         case 0:
-            direction = Vector3(ball_ppos.x, 0, ball_ppos.y);
+            direction = Vector3(ball_ppos.x, cam_pfocallength, ball_ppos.y);
             point = cam_wpos;
             break;
         // North camera
         case 1:
-            direction = Vector3(0, ball_ppos.y, ball_ppos.x);
+            direction = Vector3(cam_pfocallength, ball_ppos.y, ball_ppos.x);
             point = cam_wpos;
             break;
         // East camera
         case 2:
-            direction = Vector3(ball_ppos.x, ball_ppos.y, 0);
+            direction = Vector3(ball_ppos.x, ball_ppos.y, cam_pfocallength);
             point = cam_wpos;
             break;
         default:
