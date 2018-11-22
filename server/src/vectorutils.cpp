@@ -10,7 +10,7 @@ Vector2 pnormalize_origin(Vector2 vec){
     return normalized;
 }
 
-std::pair <Vector3,Vector3> build_vector(CameraConfig cam, Vector3 cam_wpos, 
+std::pair <Vector3,Vector3> build_vector(int camIdx, Vector3 cam_wpos, 
                                         Vector2 ball_ppos){
     // Returns the line vector representing the possible positions of the
     // detected ball in the format (point, direction)
@@ -20,18 +20,21 @@ std::pair <Vector3,Vector3> build_vector(CameraConfig cam, Vector3 cam_wpos,
     Vector3 direction;
     Vector3 point;
 
-    switch(cam.get_index()){
+    switch(camIdx){
+        // Top camera
         case 0:
-            direction = Vector3(ball_ppos.x, ball_ppos.y, 0);
-            point = cam.get_position();
-            break;
-        case 1:
-            direction = Vector3(0, ball_ppos.x, ball_ppos.y);
-            point = cam.get_position();
-            break;
-        case 2:
             direction = Vector3(ball_ppos.x, 0, ball_ppos.y);
-            point = cam.get_position();
+            point = cam_wpos;
+            break;
+        // North camera
+        case 1:
+            direction = Vector3(0, ball_ppos.y, ball_ppos.x);
+            point = cam_wpos;
+            break;
+        // East camera
+        case 2:
+            direction = Vector3(ball_ppos.x, ball_ppos.y, 0);
+            point = cam_wpos;
             break;
         default:
             throw std::invalid_argument("Invalid camera. This should never happen.");
@@ -40,22 +43,27 @@ std::pair <Vector3,Vector3> build_vector(CameraConfig cam, Vector3 cam_wpos,
     return ret;
 }
 
-Vector3 middle_of_perp(const Vector3 v1, const Vector3 d1, const Vector3 d2){
-  Vector3 l1 = d2 - d1;
-  Vector3 proj = Vector3::proj(l1,v1);
-  Vector3 perp = l1 - proj;
-  Vector3 p1 = d2-perp;
-  Vector3 p2 = d2;
-  // Does this not simplify to (d2) - (d2-perp) == perp?
-  Vector3 ans = (p2-p1)/2;
-  return ans;
+Vector3 closest_approach(const std::pair<Vector3, Vector3> l1,
+                         const std::pair<Vector3, Vector3> l2){
+    Vector3 n_dir = Vector3::cross(l1.second, l2.second);
+    Vector3 n_hat = n_dir/Vector3::magnitude(n_dir);
+    double n_mag = fabs(Vector3::dot((l1.first - l2.first), n_hat));
+    Vector3 point_of_closest_approach = n_dir * n_mag;
+    return point_of_closest_approach;
 }
 
-Vector3 find_intersection(const Vector3 v1, const Vector3 v2, const Vector3 v3,
-                        const Vector3 d1, const Vector3 d2,const Vector3 d3){
-  Vector3 mid1 = middle_of_perp(v1,d1,d2);
-  Vector3 mid2 = middle_of_perp(v2,d2,d3);
-  Vector3 mid3 = middle_of_perp(v3,d3,d1);
+Vector3 find_intersection(const std::pair<Vector3, Vector3> l1,
+                            const std::pair<Vector3, Vector3> l2){
+  return closest_approach(l1, l2);
+}
+
+Vector3 find_intersection(const std::pair<Vector3, Vector3> l1,
+                            const std::pair<Vector3, Vector3> l2,
+                            const std::pair<Vector3, Vector3> l3){
+  
+  Vector3 mid1 = closest_approach(l1, l2);
+  Vector3 mid2 = closest_approach(l2, l3);
+  Vector3 mid3 = closest_approach(l1, l3);
 
   return Vector3(
         (mid1.x + mid2.x + mid3.x)/3, 
