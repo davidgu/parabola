@@ -156,10 +156,10 @@ Vector2 detect_ball(Mat frame){
   return Vector2(x,y);
 }
 
-Vector2 cam_read_frame_pos(int curCam){
+Vector2 cam_read_frame_pos(int idx){
   Vector2 ballLoc;
-  capArr[camIdx[curCam]].read(frames[curCam]);
-  ballLoc = detect_ball(frames[curCam]);
+  capArr[camIdx[idx]].read(frames[idx]);
+  ballLoc = detect_ball(frames[idx]);
   return ballLoc;
 }
 
@@ -196,7 +196,7 @@ int main(){
       clock_t start = clock();
 
       for(int i = 0; i < 3; i ++){
-        Vector2 bpos = cam_read_frame_pos(camIdx[i]);
+        Vector2 bpos = cam_read_frame_pos(i);
         if(i == 0){
           bpos = correct_image_angle(bpos);
         }
@@ -216,7 +216,7 @@ int main(){
       clock_t start = clock();
 
       for(int i = 0; i < 2; i ++){
-        Vector2 bpos = cam_read_frame_pos(camIdx[i]);
+        Vector2 bpos = cam_read_frame_pos(i);
         lines[i] = build_vector(i, camWPoss[i], bpos);
       }
       Vector3 ball_pred_pos = find_intersection(lines[0], lines[1]);
