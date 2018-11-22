@@ -308,6 +308,7 @@ public class VisualizationManager : MonoBehaviour {
         else if(index < objectTrails.Count){
             for (int i = objectTrails.Count - 1; i > index; i--){
                 Destroy(objectTrails[i]);
+                objectTrails.RemoveAt(i);
             }
         }
         else{
