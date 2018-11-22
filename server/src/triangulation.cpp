@@ -5,6 +5,8 @@
 
 using namespace cv;
 
+const bool DAYTIME = false;
+
 const Mat cameraMatrix = (Mat1d(3, 3)<< 4.4740797894345377e+02, 0.0, 320.0, 0.0, 4.4740797894345377e+02, 213.0, 0.0, 0.0, 1.0);
 const Mat distortionCoefficients = (Mat1d(1, 5)<< 1.7657493713843387e-02, -1.6646113914955049e-01, 0.0, 0.0, 2.6525645359464572e-01); 
 
@@ -47,11 +49,34 @@ Mat findBiggestBlob(Mat & matImage){
   return newImg;
 }
 
+// Detect cones function optimized for the daytime
+Mat detect_cones_day(Mat frame){
+  GaussianBlur( frame, frame, Size(9, 9), 4, 4 );
+  frame = frame +  Scalar(-130, -130, -130);
+
+  Mat hsv;
+  cvtColor(frame, hsv, CV_BGR2HSV);
+  Scalar orange_lower1(0,50,50);
+  Scalar orange_upper1(10,255,255);
+
+  Scalar orange_lower2(170,30,30);
+  Scalar orange_upper2(179,255,255);
+  Mat orange_mask;
+  inRange(hsv, orange_lower1, orange_upper1,orange_mask);
+  erode(orange_mask, orange_mask, Mat(), Point(-1, -1), 2, 1, 1);
+
+  return orange_mask;
+}
+
 Point2f detect_ball(Mat frame, bool *success){
   GaussianBlur(frame, frame, Size(5, 5), 4, 4);
-  //frame = frame + Scalar(-50, -50, -50);
-  //frame.convertTo(frame, -1, 1.4, 0);
-  Mat final_image = detect_cones(frame);
+  Mat final_image;
+  if(DAYTIME){
+    final_image = detect_cones_day(frame);
+  }
+  else{
+    final_image = detect_cones_day(frame);
+  }
   final_image = findBiggestBlob(final_image);
 
   //start analyzing the image

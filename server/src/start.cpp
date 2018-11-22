@@ -10,6 +10,7 @@
 #include "simclock.hpp"
 
 const bool THREE_CAMERA = false;
+const bool DAYTIME = false;
 
 using namespace cv;
 
@@ -140,6 +141,25 @@ Mat detect_cones(Mat frame){
   return orange_mask;
 }
 
+// Detect cones function optimized for the daytime
+Mat detect_cones_day(Mat frame){
+  GaussianBlur( frame, frame, Size(9, 9), 4, 4 );
+  frame = frame +  Scalar(-130, -130, -130);
+
+  Mat hsv;
+  cvtColor(frame, hsv, CV_BGR2HSV);
+  Scalar orange_lower1(0,50,50);
+  Scalar orange_upper1(10,255,255);
+
+  Scalar orange_lower2(170,30,30);
+  Scalar orange_upper2(179,255,255);
+  Mat orange_mask;
+  inRange(hsv, orange_lower1, orange_upper1,orange_mask);
+  erode(orange_mask, orange_mask, Mat(), Point(-1, -1), 2, 1, 1);
+
+  return orange_mask;
+}
+
 Mat findBiggestBlob(Mat & matImage){
   int largest_area=0;
   int largest_contour_index=0;
@@ -166,7 +186,14 @@ Mat findBiggestBlob(Mat & matImage){
 
 Vector2 detect_ball(Mat frame, bool *success){
   GaussianBlur( frame, frame, Size(11, 11), 4, 4);
-  Mat final_image = detect_cones(frame);
+  Mat final_image;
+  if(DAYTIME){
+    final_image = detect_cones_day(frame);
+  }
+  else{
+    final_image = detect_cones_day(frame);
+  }
+
   final_image = findBiggestBlob(final_image);
 
   //start analyzing the image
