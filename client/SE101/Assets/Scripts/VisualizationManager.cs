@@ -175,7 +175,10 @@ public class VisualizationManager : MonoBehaviour {
         float xcoord = anchorPoints[index].x;
         float ycoord = anchorPoints[index].y + 100;
         float zcoord = anchorPoints[index].z;
-        Instantiate(anchorPointMarker, new Vector3(xcoord, ycoord, zcoord), Quaternion.identity, null);
+        if(anchorPointMarkers[index]!=null){
+            Destroy(anchorPointMarkers[index]);
+        }
+        anchorPointMarkers[index] = Instantiate(anchorPointMarker, new Vector3(xcoord, ycoord, zcoord), Quaternion.identity, null).gameObject;
     }
 
     void CalculateOrigin(){
