@@ -167,7 +167,6 @@ Mat findBiggestBlob(Mat & matImage){
 Vector2 detect_ball(Mat frame, bool *success){
   GaussianBlur( frame, frame, Size(11, 11), 4, 4);
   Mat final_image = detect_cones(frame);
-  imshow("asdsa",final_image);
   final_image = findBiggestBlob(final_image);
 
   //start analyzing the image
@@ -203,11 +202,11 @@ Vector2 cam_read_frame_pos(int idx, bool* success){
   ballLoc = detect_ball(frames[idx], &detectSuccess);
   if(detectSuccess){
     *success = true;
-    std::cout<<"Camera "<<idx<<" DETECT"<<std::endl;
+    //std::cout<<"Camera "<<idx<<" DETECT"<<std::endl;
   }
   else{
     *success = false;
-    std::cout<<"Camera "<<idx<<" NO DETECT"<<std::endl;
+    //std::cout<<"Camera "<<idx<<" NO DETECT"<<std::endl;
   }
   return ballLoc;
 }
@@ -269,7 +268,6 @@ int main(){
     else{
       bool success = false;
       for(int i = 1; i < 2; i ++){
-        int key = waitKey(10);
         Vector2 bpos = cam_read_frame_pos(i, &success);
         // If detection fails for one of the cameras, skip this set
         if(!success){
@@ -281,7 +279,7 @@ int main(){
 
       // If all cameras sucessfully detected the ball
       if(success){
-        Vector3 ball_pred_pos = find_intersection(lines[0], lines[1]);
+        Vector3 ball_pred_pos = find_intersection(lines[1], lines[2]);
         tobject.add_pos(simClock.get_abstime(), ball_pred_pos);
         std::cout << ball_pred_pos << std::endl;
       }
