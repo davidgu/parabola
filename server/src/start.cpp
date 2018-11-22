@@ -20,6 +20,8 @@ double upDist = 2.0;
 double rightDist = 2.0;
 double sideCamHeights = 1.4;
 
+const double cam_pfocallength = 466.18874961590114;
+
 // 0 -> Top camera
 // 1 -> North camera
 // 2 -> East camera
@@ -252,7 +254,7 @@ int main(){
         if(i == 0){
           bpos = correct_image_angle(bpos);
         }
-        lines[i] = build_vector(i, camWPoss[i], bpos);
+        lines[i] = build_vector(i, cam_pfocallength, camWPoss[i], bpos);
       }
       Vector3 ball_pred_pos = find_intersection(lines[0], lines[1], lines[2]);
       tobject.add_pos(simClock.get_abstime(), ball_pred_pos);
@@ -273,7 +275,7 @@ int main(){
         if(!success){
           //break;
         }
-        lines[i] = build_vector(i, camWPoss[i], bpos);
+        lines[i] = build_vector(i, cam_pfocallength, camWPoss[i], bpos);
         //std::cout << "Camera "<<i<<" ~ point: "<<lines[i].first<<", vec: "<<lines[i].second<<std::endl;
       }
 
