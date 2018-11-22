@@ -77,13 +77,13 @@ double TrackedObject::quadratic_formula(Vector3 v1, Vector3 cur_pos){
   double c = -floor_loc + cur_pos.y;
 
   double discriminant = b*b - 4.0*a*c;
-  if(discriminant < 0) throw std::logic_error("no solutions exist for the predicted time");
+  if(discriminant < 0) return -1;
   double ans1 = (-b + sqrt(discriminant))/(2.0*a);
   double ans2 = (-b - sqrt(discriminant))/(2.0*a);
   if(ans1 > 0) return ans1;
   if(ans2 > 0) return ans2;
   else std::cout<<"Found no answer to the prediction / you are already on the floor"<<std::endl;
-  return -99999;
+  return -1;
 }
 
 
@@ -111,14 +111,15 @@ bool TrackedObject::start_prediction(double min_velocity){
 
 bool TrackedObject::stop_prediction(int consider_last_n_points, double max_velocity){
   int vec_size = past_pos.size();
-  if(!(past_pos.size()>=2)){
+  if(vec_size>=2){
     int num_consider = std::min(consider_last_n_points, vec_size);
 
     for(int i = vec_size - num_consider; i < vec_size - 1; i++){
       if(Vector3::magnitude(get_avg_velocity(i,i+1)) > max_velocity) return false;
     }
     return true;
-  }else{
+  }
+  else{
     throw std::runtime_error("Cannot calculate velocity when past position vector is empty!");
   }
 } 
@@ -141,7 +142,7 @@ Vector3 TrackedObject::get_avg_velocity(int start, int end){
 }
 
 Vector3 TrackedObject::get_velocity(double deltat, int samples){
-    if(!(past_pos.size()>=2)){
+    if((past_pos.size()>=2)){
         int vec_size = past_pos.size();
         std::pair<double, Vector3> ppos1;
         std::pair<double, Vector3> ppos2;
@@ -167,11 +168,34 @@ Vector3 TrackedObject::predict_pos(double deltat){
     // s = (1/2)at^2 + vt
     if(deltat >=0){
         Vector3 accel = gravv;
-        Vector3 cur_vel = get_velocity(0);
+        Vector3 cur_vel;
+        if(past_pos.size() > 21){
+            // Sample the past 20 positions
+            cur_vel = get_avg_velocity(past_pos.size()-21, past_pos.size()-1);
+        }
+        else{
+            cur_vel = get_velocity(0);
+        }
         Vector3 cur_pos = past_pos[past_pos.size() - 1].second;
         return (cur_pos + (accel*0.5)*(deltat*deltat) + (cur_vel*deltat));
     }
     else{
         throw std::logic_error("Negative deltat not yet implemented");
+    }
+}
+
+Vector3 TrackedObject::predict_landing_pos(){
+    Vector3 cur_vel = get_velocity(0);
+    Vector3 cur_pos = past_pos[past_pos.size() - 1].second;
+    double deltat = quadratic_formula(cur_vel, cur_pos);
+    if(deltat != -1){
+        return predict_pos(deltat);
+    }
+    else{
+        return Vector3(
+            std::numeric_limits<double>::max(), 
+            std::numeric_limits<double>::max(), 
+            std::numeric_limits<double>::max()
+        );
     }
 }

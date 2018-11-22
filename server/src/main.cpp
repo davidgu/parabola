@@ -7,6 +7,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
@@ -27,6 +29,10 @@ TrackedObject tobject;
 TrackedObject *SERVER_TRACKEDOBJECT_PTR;
 SimClock simClock;
 bool DEBUG = false;
+
+//  Notes and Errata
+//  * sometimes killing the client while connected to the websocket server 
+//    will cause the server to die as well.
 
 
 // Server code
@@ -142,7 +148,14 @@ class session : public std::enable_shared_from_this<session> {
                 }
 
                 else if(req == "predictland"){
-                    ret = "predictland:"+SERVER_TRACKEDOBJECT_PTR->predict_landing_point().to_json();
+                    Vector3 pred_pos = SERVER_TRACKEDOBJECT_PTR->predict_landing_pos();
+                    if(pred_pos.x != std::numeric_limits<double>::max()){
+                        ret = "predictland#"+pred_pos.to_json();
+                    }
+                    else{
+                        // Return invalid statement, which will cause client to do nothing
+                        ret = "predictland#error";
+                    }
                 }
 
                 else if(req == "predictpath"){
@@ -285,12 +298,24 @@ void init_server(std::string addr, int por, int threa, TrackedObject *tobj){
     ioc.run();
 }
 
-int main(){
+int get_arduino(std::string arduino_device){
+    int fd = open(arduino_device.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+    if (fd == -1){
+        exit(-1); // If the device is not open, return -1
+    }
+    return fd;
+}
+
+int main(int argc, char *argv[]){
+    // arg 1 -> day/night (1/0)
+    // arg 2 -> server ip
+    // arg 3 -> server port
+
     //
     //  Initialize detector
     //
     Detector detector = Detector(
-        false,
+        (bool)std::stoi(argv[1]),
         (Mat1d(3, 3)<< 4.4740797894345377e+02, 0.0, 320.0, 0.0, 4.4740797894345377e+02, 213.0, 0.0, 0.0, 1.0),
         (Mat1d(1, 5)<< 1.7657493713843387e-01, -1.6646113914955049e-01, 0.0, 0.0, 2.6525645359464572e-01)
     );
@@ -319,10 +344,13 @@ int main(){
         assert(false);
     }
 
+    // Initialize arduino
+    int arduino =  get_arduino(argv[4]);
+
     //
     //  Initialize server and start tracking
     //
-    std::thread t1(init_server,"127.0.0.1", 8080, 1, &tobject);
+    std::thread t1(init_server,argv[2], std::stoi(argv[3]), 1, &tobject);
     simClock = SimClock();
     while(true){
         cv::Point3f curPoint = detector.get_normalized_position();
@@ -331,7 +359,10 @@ int main(){
             Vector3 curPointv = Vector3::point3f_to_vector3(curPoint);
             tobject.add_pos(simClock.get_abstime(), curPointv);
             std::cout << "Added (" << simClock.get_abstime() << "," << curPointv << ") to tobject" <<std::endl;
+
+            // Write to Arduino
+            int cmd = 1;
+            write(arduino, &cmd, sizeof(cmd) -1 );
         }
     }
 }
-

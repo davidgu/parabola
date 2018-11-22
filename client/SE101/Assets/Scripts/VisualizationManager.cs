@@ -1,9 +1,10 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System;
 using WebSocketSharp;
+using SimpleJSON;
 
 public class VisualizationManager : MonoBehaviour {
 
@@ -37,15 +38,30 @@ public class VisualizationManager : MonoBehaviour {
     public Text TVPairsSizeText;
     public Text ObjTrailSizeText;
     public Text FrozenHeadTimeText;
+    public Text PredictedPos;
 
     bool timeFrozen = false;
+
+    public GameObject debugPoint;
+    public Vector3 debugPointLocation;
+
+    public GameObject deltaCalibrationSphere;
+
+    public Transform predictedLandingMarkerPrefab;
+    GameObject predictedLandingMarker;
+    Vector3 predictedLandingMarkerLocation;
+
+    public GameObject WorldCoordnateSystem;
 
     // The origin point the server is using
     // Positive Z is forward
     // Additional information may be needed
-    Vector3 origin;
+    public Vector3 origin;
     Quaternion originForward;
     Transform originDisplay;
+
+    public Vector3 delta;
+    public Text deltaDisplayPanel;
 
     // Height of the origin in meters, from the ground plane
     const float originHeight = 1.5f;
@@ -95,11 +111,16 @@ public class VisualizationManager : MonoBehaviour {
 
 	// Receive new position data from server and draw trails
 	void Update () {
+        PlaceDebugMarker();
+        PlacePredictedLandingMarker();
         UpdateDebugPanel();
+        ManageTVPairsSize();
         if(wsconn !=null && wsconn.IsConnected){
             websocketServerStatus.text = "Connection Status: Connected";
             try{
-                GetPositionDataFromServer();
+                if(!timeFrozen){
+                    GetDataFromServer();
+                }
             }
             catch(Exception e){
                 
@@ -121,6 +142,17 @@ public class VisualizationManager : MonoBehaviour {
         wsconn.Close();
 	}
 
+    void ManageTVPairsSize(){
+        if(tvpairs.Count > 100){
+            int remRange = tvpairs.Count - 100;
+            for (int i = 0; i < remRange; i++ ){
+                Destroy(objectTrails[i].gameObject);
+            }
+            objectTrails.RemoveRange(0, remRange);
+            tvpairs.RemoveRange(0, remRange);
+        }
+    }
+
 	public void BuildWebSocketsConnection(){
         // Connect and set up websocket
         wsconn = new WebSocket(websocketAddress.text);
@@ -132,18 +164,31 @@ public class VisualizationManager : MonoBehaviour {
             if (e.IsText)
             {
                 string text = e.Data;
-                string retcode = text.Split(':')[0];
+                string retcode = text.Split('#')[0];
 
                 switch (retcode)
                 {
                     case "curpos":
-                        Debug.Log("Received curpos!");
+                        var json = JSON.Parse(text.Split('#')[1]);
+                        //Debug.Log(text.Split('#')[1]);
+                        double time = json["time"];
+                        Vector3 pos = new Vector3(json["pos"]["x"].AsFloat,
+                                                  json["pos"]["y"].AsFloat,
+                                                  json["pos"]["z"].AsFloat);
+                        debugPointLocation = pos;
+                        //Debug.Log("Set debug point location to "+debugPointLocation.ToString());
+                        tvpairs.Add(new TVPair(time, pos));
                         break;
                     case "all":
                         Debug.Log("Received all!");
                         break;
                     case "predictland":
-                        Debug.Log("Received predictland!");
+                        var json2 = JSON.Parse(text.Split('#')[1]);
+                        Debug.Log(text.Split('#')[1]);
+                        Vector3 pos2 = new Vector3(json2["x"].AsFloat,
+                                                  json2["y"].AsFloat,
+                                                  json2["z"].AsFloat);
+                        predictedLandingMarkerLocation = pos2;
                         break;
                     case "predictpath":
                         Debug.Log("Received predictpath!");
@@ -152,7 +197,7 @@ public class VisualizationManager : MonoBehaviour {
                         Debug.Log("Received error!");
                         break;
                     default:
-                        Debug.Log("Error: Invalid retcode from server!");
+                        Debug.Log("Error: Invalid retcode \""+retcode+"\"from server!");
                         break;
                 }
             }
@@ -164,8 +209,16 @@ public class VisualizationManager : MonoBehaviour {
         wsconn.Connect();
     }
 
-    void GetPositionDataFromServer(){
+    void GetDataFromServer(){
         wsconn.Send("curpos");
+
+        // Poll for predicted landing position
+        wsconn.Send("predictland");
+    }
+
+    private void PlaceDebugMarker(){
+        Debug.Log("Placed debug marker");
+        debugPoint.transform.localPosition = debugPointLocation - delta;
     }
 
     // 4 Anchor points are needed 
@@ -188,6 +241,34 @@ public class VisualizationManager : MonoBehaviour {
             Destroy(anchorPointMarkers[index]);
         }
         anchorPointMarkers[index] = Instantiate(anchorPointMarker, new Vector3(xcoord, ycoord, zcoord), Quaternion.identity, null).gameObject;
+    }
+
+    public void CalibrateDelta(){
+        // The delta calculation sphere is in the same real world position as the cone
+        // serverPos - delta = calibpos
+        // serverPos - calibPos = delta
+        Vector3 calibPos = new Vector3(deltaCalibrationSphere.transform.position.x,
+                                       deltaCalibrationSphere.transform.position.y - 0.5f,
+                                       deltaCalibrationSphere.transform.position.z);
+        Vector3 serverPos = debugPointLocation;
+        delta = serverPos - calibPos;
+        delta = WorldCoordnateSystem.transform.rotation * delta;
+        deltaDisplayPanel.text = "Delta: " + delta.ToString();
+    }
+
+    public void CalibrateForwards(){
+        
+    }
+
+    public void PlacePredictedLandingMarker(){
+        if(predictedLandingMarker != null){
+            Destroy(predictedLandingMarker);
+        }
+        predictedLandingMarker = Instantiate(predictedLandingMarkerPrefab, 
+                                             predictedLandingMarkerLocation-delta, 
+                                             Quaternion.identity, 
+                                             WorldCoordnateSystem.transform).gameObject;
+        predictedLandingMarker.transform.localPosition = predictedLandingMarkerLocation - delta;
     }
 
     void CalculateOrigin(){
@@ -214,6 +295,9 @@ public class VisualizationManager : MonoBehaviour {
         ycoord += originHeight;
 
         origin = new Vector3(xcoord, ycoord, zcoord);
+
+        // Rotate world coordinates
+        WorldCoordnateSystem.transform.rotation = originForward;
     }
 
     // Show a little glowing ball at the origin point
@@ -222,6 +306,9 @@ public class VisualizationManager : MonoBehaviour {
         // Calculate this with the direciton of the vector3 between NW and SW
         CalculateOrigin();
         originDisplay = Instantiate(originPointMarker, origin, originForward, null);
+        for (int i = 0; i < anchorPointMarkers.Length; i++){
+            anchorPointMarkers[i].SetActive(true);
+        }
     }
 
     public void ToggleDisplayOrigin(){
@@ -230,6 +317,10 @@ public class VisualizationManager : MonoBehaviour {
         }
         else{
             Destroy(originDisplay.gameObject);
+            for (int i = 0; i < anchorPointMarkers.Length; i++)
+            {
+                anchorPointMarkers[i].SetActive(false);
+            }
         }
     }
 
@@ -254,8 +345,8 @@ public class VisualizationManager : MonoBehaviour {
         for (int i = 0; i < objectTrails.Count; i++){
             Destroy(objectTrails[i]);
         }
-        objectTrails = new List<GameObject>();
-        tvpairs = new List<TVPair>();
+        objectTrails.Clear();
+        tvpairs.Clear();
     }
 
     public void ToggleTimeFreeze(){
@@ -279,7 +370,9 @@ public class VisualizationManager : MonoBehaviour {
     }
 
     void ShowObjectTrail(int index){
-        objectTrails.Add(Instantiate(objectTrail, tvpairs[index].GetVector3() + origin, Quaternion.identity, null).gameObject);
+        Transform toAdd = Instantiate(objectTrail, tvpairs[index].GetVector3() -delta, Quaternion.identity, WorldCoordnateSystem.transform);
+        toAdd.localPosition = tvpairs[index].GetVector3() - delta;
+        objectTrails.Add(toAdd.gameObject);
     }
 
     public void ChangeTrailDisplayRangeSlider(){
@@ -356,5 +449,6 @@ public class VisualizationManager : MonoBehaviour {
         else{
             FrozenHeadTimeText.text = "FrozenHead Time: N/A";
         }
+        PredictedPos.text = "Predicted Pos: " + predictedLandingMarkerLocation.ToString();
     }
 }

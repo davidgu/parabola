@@ -41,6 +41,7 @@ class TrackedObject{
         // Negative deltat will return predicted times in the past.
         // Negative deltat is not yet implemented.
         Vector3 predict_pos(double deltat);
+        Vector3 predict_landing_pos();
         
         // Recorded positions from now on should be contributing
         // to the predicted location of the object
