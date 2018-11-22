@@ -95,15 +95,16 @@ class session : public std::enable_shared_from_this<session> {
 
             std::string ret;
             if(SERVER_TRACKEDOBJECT_PTR != nullptr){
-                if(req == "head"){
-                    ret = "blah";
+                if(req == "curpos"){
+                    int ppos_len = SERVER_TRACKEDOBJECT_PTR -> get_all_past_tvpair().size;
+                    ret = SERVER_TRACKEDOBJECT_PTR->get_tvpair_json(ppos_len - 1);
                 }
                 else if(req == "all"){
-                    ret = SERVER_TRACKEDOBJECT_PTR->get_all_past_pos_json();
+                    ret = SERVER_TRACKEDOBJECT_PTR->get_all_past_tvpair_json();
                 }
 
                 else if(req == "predictland"){
-
+                    ret = SERVER_TRACKEDOBJECT_PTR->predict_landing_point().to_json();
                 }
 
                 else if(req == "predictpath"){

@@ -4,6 +4,11 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/tracking.hpp"
 #include "vector3.hpp"
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+// Initialize static class member
+void *CameraConfig::currentlyEditingConfig = 0;
 
 CameraConfig::CameraConfig(int i, Vector3 p){
   index = i;
@@ -93,7 +98,6 @@ void CameraConfig::match_cams(){
 }
 void CameraConfig::fix_cam_rot(){
   // Note: the cameras in capArr must be opened
-  int rotatedCamIdx[3]; 
   int curCam = 0;
   int curRot = 0;
 
@@ -101,7 +105,7 @@ void CameraConfig::fix_cam_rot(){
     int key = cv::waitKey(10);
     if(key == 27) return; // stop capturing by pressing ES
     else if(key == 13){ // ENTER pressed, selecting camera for curCam
-      rotatedCamIdx[curCam] = curRot;
+      rotCamIdx[curCam] = curRot;
       std::cout<<"cam "<<curCam<<" has rotation: "<<curRot<<std::endl;
 
       // reset params
@@ -135,47 +139,17 @@ void CameraConfig::fix_cam_rot(){
     }
     cv::imshow("Camera", displayFrame);
   }
-  std::cout<<"Top rot: "<<rotatedCamIdx[0]<<", Up rot: "<<rotatedCamIdx[1]<<", Right rot: "<<rotatedCamIdx[2]<<std::endl;
+  std::cout<<"Top rot: "<<rotCamIdx[0]<<", Up rot: "<<rotCamIdx[1]<<", Right rot: "<<rotCamIdx[2]<<std::endl;
 }
 
-
-int CameraConfig::build_camera_config(){
-  // Cycles through the cameras to find which one it is
-  // Also states how far the cameras are from the middle
-  double sideCamHeights = 1.4;
-  /*int numCams = countCameras();
-    if(numCams != 4){
-    std::cout<<"Four cameras need to be connected. The number of cameras are: "<<numCams<<std::endl;
-    return;
-    }*/
-  std::cout<<"4 Cameras connected. Camera Location Detection Running."<<std::endl;
-
-  // idx 0 = top, idx 1 = up, idx 2 = right
-
-  for(int i = 0 ; i < 4; i++){
-    if(!capArr[i].open(i)){
-      std::cout<<"can't open cam: "<<i<<std::endl;
-    }
-    capArr[i].set(CV_CAP_PROP_FRAME_WIDTH,640);
-    capArr[i].set(CV_CAP_PROP_FRAME_HEIGHT,480);
-    capArr[i].set(CV_CAP_PROP_AUTOFOCUS, 0);
-    capArr[i].set(CV_CAP_PROP_EXPOSURE, 0);
-  }
-  CameraConfig::match_cams();
-  CameraConfig::fix_cam_rot();
-
-
-  // Using the top camera we need to calibrate the color:
-
-  // Calibrate cones
-
-  int coneCali[2][3] = {{1,150,200},{15,255,255}}; 
+void CameraConfig::calibrate_cones(){
+  // This can be refactored with calibrate balls later
   int curRange = 0; // 0 = lower, 1 = upper
 
   // you control the hsv vals using... h: qw, s: er, v: ty
   while(1){
-    int key = cv::waitKey(10);
-    if(key == 27) return 1; // stop capturing by pressing ES
+    int key = cv::waitKey(1);
+    if(key == 27) return; // stop capturing by pressing ES
     else if(key == 13){ // ENTER pressed, selecting camera for curCam
       break;
     }else if(key == 113){ // decrease h 
@@ -203,7 +177,8 @@ int CameraConfig::build_camera_config(){
     if(key != -1){
       std::cout<<key<<std::endl;
     }
-    capArr[camIdx[1]].read(frames[1]); // We'll use the top camera to do the calibration
+    capArr[camIdx[1]].read(frames[1]); // We'll use the up camera to do the calibration
+    cv::namedWindow("Camera", cv::WINDOW_AUTOSIZE);
     putText(frames[1], "h_l: " + std::to_string(coneCali[0][0]), cv::Point2f(5,50), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,155), 2);
     putText(frames[1], "h_u: " + std::to_string(coneCali[1][0]), cv::Point2f(150,50), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,155), 2);
     putText(frames[1], "s_l: " + std::to_string(coneCali[0][1]), cv::Point2f(5,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,155), 2);
@@ -214,33 +189,170 @@ int CameraConfig::build_camera_config(){
     cv::Mat coneMask = detect_cones(frames[1],coneCali);
     cv::imshow("Camera", frames[1]);
     cv::imshow("Mask", coneMask);
+  }
+}
 
+void CameraConfig::calibrate_ball(int maskId){
+
+}
+
+void detect_cones_helper(int event, int x, int y, int flags, void* param){
+  cv::Mat mat = *((cv::Mat*)param);
+  if(event == CV_EVENT_LBUTTONDOWN){
+    CameraConfig *edCfg = (CameraConfig*)CameraConfig::currentlyEditingConfig;
+    edCfg->coneLocations.push_back(Vector2(x,y));
+    std::cout<<"Added cone at: "<<x<<" "<<y<<std::endl;
+  }
+}
+
+void CameraConfig::set_currently_editing_cfg(CameraConfig *cfgptr){
+  CameraConfig::currentlyEditingConfig = (void *)cfgptr;
+}
+
+void CameraConfig::detect_cones(){
+CameraConfig::currentlyEditingConfig = this;
+  while(1){
+    int key = cv::waitKey(1);
+    if(key == 13 || coneLocations.size() == 4){ // ENTER pressed
+      break;
+    }
+    capArr[camIdx[0]].read(frames[0]); // We'll use the top camera to do the detection
+      putText(frames[0], "Identify Cones", cv::Point2f(50,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,255), 2);
+    cv::namedWindow("Camera", cv::WINDOW_AUTOSIZE);
+    cv::setMouseCallback("Camera", detect_cones_helper, (void*) &frames[0]);
+
+    std::vector<cv::Point> conePoints;
+    for(int i = 0; i < coneLocations.size();i++){
+      cv::Point curPoint(coneLocations[i].x,coneLocations[i].y);
+      conePoints.push_back(curPoint);
+    }
+    for(int i = 0 ; (unsigned) i < conePoints.size();i++){
+      circle(frames[0],conePoints[i],5,cv::Scalar(128,128,128),-1);
+    }
+    cv::imshow("Camera", frames[0]);
+  }
+}
+
+void CameraConfig::calc_top_rot_theta(){
+  // given the locations of the cones, returns the ball's catesian location
+  // Note: The camera must be within 90 degrees of facing in the right orientation
+  assert(coneLocations.size() == 4);
+
+  // calculate the midpoint of the cones, needed to find the origin
+  Vector2 midpoint;
+  for(int i = 0 ; (unsigned) i < coneLocations.size();i++){
+    midpoint.x += coneLocations[i].x;
+    midpoint.y += coneLocations[i].y;
+  }
+  midpoint.x/=4;
+  midpoint.y/=4;
+
+
+  // calculate which direction to rotate and how much
+  double lowestY = 999999.0;
+  double sLowestY = 999999.0;
+  Vector2 lowestYPair;
+  Vector2 sLowestYPair;
+
+  // finds the lowest point
+  for(int i = 0; (unsigned) i < coneLocations.size();i++){
+    double x = coneLocations[i].x;
+    double y = coneLocations[i].y;
+    if( y < lowestY){
+      // update the second lowest
+      sLowestY = lowestY;
+      sLowestYPair = lowestYPair;
+      // update the lowest pair
+      lowestY = y;
+      lowestYPair = coneLocations[i];
+    }else if(y < sLowestY){
+      sLowestY = y;
+      sLowestYPair = coneLocations[i];
+    }
   }
 
+  double xDiff = -1;
+  double yDiff = -1;
+  // std::cout<<lowestYPair.x<<" "<<lowestYPair.y<<std::endl;
+  // std::cout<<sLowestYPair.x<<" "<<sLowestYPair.y<<std::endl;
+  if(lowestYPair.x > sLowestYPair.x){ // The lower point it to the bottom right
+    xDiff = lowestYPair.x - sLowestYPair.x;
+    yDiff = sLowestYPair.y - lowestYPair.y;
+  }else{
+    xDiff = sLowestYPair.x - lowestYPair.x;
+    yDiff = sLowestYPair.y - lowestYPair.y;
+  }
 
-  // Calibrate Ball
+  topRotTheta = atan(yDiff/xDiff);
+  if(lowestYPair.x < sLowestYPair.x) topRotTheta=topRotTheta * -1.0;
+}
 
-  int ballCali[2][3] = {{105,80,80},{179,255,255}}; 
+int CameraConfig::build_camera_config(){
+  // Cycles through the cameras to find which one it is
+  // Also states how far the cameras are from the middle
+  /*int numCams = countCameras();
+    if(numCams != 4){
+    std::cout<<"Four cameras need to be connected. The number of cameras are: "<<numCams<<std::endl;
+    return;
+    }*/
+  std::cout<<"4 Cameras connected. Camera Location Detection Running."<<std::endl;
 
+  // idx 0 = top, idx 1 = up, idx 2 = right
+
+  for(int i = 0 ; i < 4; i++){
+    if(!capArr[i].open(i)){
+      std::cout<<"can't open cam: "<<i<<std::endl;
+    }
+    capArr[i].set(CV_CAP_PROP_FRAME_WIDTH,640);
+    capArr[i].set(CV_CAP_PROP_FRAME_HEIGHT,480);
+    capArr[i].set(CV_CAP_PROP_AUTOFOCUS, 0);
+    capArr[i].set(CV_CAP_PROP_EXPOSURE, 0);
+  }
+  CameraConfig::match_cams();
   double topDist = 1.5;
   double upDist = 2.0;
   double rightDist = 2.0;
+  double sideCamHeights = 1.4;
+  CameraConfig::fix_cam_rot();
+
+  // Using the top camera we need to calibrate the color:
+
+  // Calibrate cones
+  // CameraConfig::calibrate_cones();
+
+  // Calibrate Ball
+
+  std::cout<<"Detecting Cones"<<std::endl;
+  CameraConfig::detect_cones();
+  std::cout<<"Calculating Rotation Theta for Top Camera"<<std::endl;
+  CameraConfig::calc_top_rot_theta();
+
 
   // Why do we need to locations of the cones? We need to know how to dewarp
 
   // first line is the indexes of the camera
-  // next we have the distance of the cameras to the middle
+  // next we have the distance of the cameras to the middle, topDist, upDist, rightDist, sideCamHeights
   // next is the rotation params for each camera (90 degrees)
   // next is the photo params for the colour of the cones
-  // next is the photo params for the colour of the ball
+  // next is the photo params for the colour of the ball1
+  // next is the photo params for the colour of the ball2
   // next we have the locations of the cones from the top camera
-  // next we have the flag for the dewarping of the photo
   // next is the rotation angle for the top camera
+  // next we have the flag for the dewarping of the photo (PLEASE IMPLEMENT)
 
-  /*std::ofstream myfile;
+  std::cout<<"Saving Config File"<<std::endl;
+  std::ofstream myfile;
     myfile.open ("config.txt");
-    myfile << ;
-    myfile.close();*/
+    myfile << camIdx[0]<<" "<<camIdx[1]<<" "<<camIdx[2]<<std::endl;
+    myfile << topDist<<" "<<upDist<<" "<<rightDist<<" "<<sideCamHeights<<std::endl;
+    myfile << rotCamIdx[0]<<" "<<rotCamIdx[1]<<" "<<rotCamIdx[2]<<std::endl;
+    myfile << coneCali[0][0]<<" "<<coneCali[0][1]<<" "<<coneCali[0][2]<<" "<<coneCali[1][0]<<" "<<coneCali[1][1]<<" "<<coneCali[1][2]<<std::endl;
+    myfile << ballCali1[0][0]<<" "<<ballCali1[0][1]<<" "<<ballCali1[0][2]<<" "<<ballCali1[1][0]<<" "<<ballCali1[1][1]<<" "<<ballCali1[1][2]<<std::endl;
+    myfile << ballCali2[0][0]<<" "<<ballCali2[0][1]<<" "<<ballCali2[0][2]<<" "<<ballCali2[1][0]<<" "<<ballCali2[1][1]<<" "<<ballCali2[1][2]<<std::endl;
+    myfile << coneLocations[0].x<<" "<< coneLocations[0].y<<" "<<coneLocations[1].x<<" "<<coneLocations[1].y<<" "<<coneLocations[2].x<<" "<<coneLocations[2].y<<std::endl;
+    myfile << topRotTheta<<std::endl;
+    myfile.close();
+  std::cout<<"Config File Saved!"<<std::endl;
   return 0;
 }
 

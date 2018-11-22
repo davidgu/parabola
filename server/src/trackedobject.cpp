@@ -11,18 +11,43 @@ void TrackedObject::add_pos(double time, Vector3 cur_pos){
   past_pos.push_back(pair);
 }
 
-const std::vector<std::pair<double, Vector3>> TrackedObject::get_all_past_pos(){
-  return past_pos;
+Vector3 TrackedObject::predict_landing_point(){
+    /// Assume that x and z velocities will remain constant
+    // Zero out y velocity, assume that y position is zero at landing point
+    Vector3 vel = get_velocity(0);
+    vel.y = 0;
+
+    double landing_deltat = predict_landing_deltatime();
+
+    Vector3 pred_pos = past_pos[past_pos.size - 1] + (vel*landing_deltat);
+    pred_pos.y = 0;
+
+    return pred_pos;
 }
 
-const std::string TrackedObject::get_all_past_pos_json(){
-  std::string ret = "{\"data\":[";
-  for(int i = past_pos.size - 1; i>=0; i--){
-    std::string object = "{\"time\":"+std::to_string(past_pos[i].first)+"\",\"pos\":";
-    object += past_pos[i].second.to_string();
-  }
-  ret += "]}";
-  return ret;
+double TrackedObject::predict_landing_deltatime(){
+    double cur_y = past_pos[past_pos.size - 1].second.y;
+    double deltat = cur_y/grav;
+    return deltat;
+}
+
+const std::vector<std::pair<double, Vector3>> TrackedObject::get_all_past_tvpair(){
+    return past_pos;
+}
+
+const std::string TrackedObject::get_all_past_tvpair_json(){
+    std::string ret = "{\"data\":[";
+    for(int i = past_pos.size - 1; i>=0; i--){
+        ret += get_tvpair_json(i);
+    }
+    ret += "]}";
+    return ret;
+}
+
+const std::string TrackedObject::get_tvpair_json(int index){
+    std::string str = "{\"time\":"+std::to_string(past_pos[index].first)+"\",\"pos\":";
+    str += past_pos[index].second.to_string();
+    return str;
 }
 
 // Template to compare pairs
