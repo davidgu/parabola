@@ -316,6 +316,8 @@ int load_configuration(const std::string camProjMat1,
         if(fileExists(vOrigin)){
             FileStorage vo(vOrigin, FileStorage::READ);
             vo["data"] >> virtualOrigin;
+            vo["scale"] >> scale;
+            retStatus++;
         }
     }
 
@@ -341,6 +343,7 @@ void save_configuration(const std::string camProjMat1,
     if(!fileExists(vOrigin)){
         FileStorage fs(vOrigin, FileStorage::WRITE);
         fs << "data" << virtualOrigin;
+        fs << "scale" << scale;
     }
 }
 
@@ -349,7 +352,7 @@ void write_point_data(const std::string fileName, std::vector<Point2f> points){
     fs << "data";
     for (int i = 0; i < points.size(); ++i)
     {
-        fs<<i<<points[i];
+        fs<<std::to_string(i)<<points[i];
     }
 }
 
@@ -357,17 +360,20 @@ int main(){
     configure_cameras();
     // No saved data exists
     if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml")==0){
+        std::cout << "No configuration files found!" << std::endl;
         calibrate(capArr[idxToCam[0]], capArr[idxToCam[1]]);
         calibrate_vorigin(capArr[idxToCam[0]], capArr[idxToCam[1]]);
         save_configuration("cpm1.xml", "cpm2.xml", "vo.xml");
     }
     // Virtual origin data does not exist 
     else if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml") == 1){
+        std::cout << "Virtual origin configuration not found!" << std::endl;
         calibrate_vorigin(capArr[idxToCam[0]], capArr[idxToCam[1]]);
         save_configuration("cpm1.xml", "cpm2.xml", "vo.xml");
     }
     // All data exists
     else if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml") == 2){
+        std::cout << "All configuration found!" << std::endl;
         // Do nothing
     }
     else{
