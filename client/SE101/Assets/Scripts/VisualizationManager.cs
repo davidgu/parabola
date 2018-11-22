@@ -29,6 +29,13 @@ public class VisualizationManager : MonoBehaviour {
         }
     }
 
+    // Debug Panel Textboxes
+    public Text VisualizedTimeText;
+    public Text TVPHTimeText;
+    public Text TVPairsSizeText;
+    public Text ObjTrailSizeText;
+    public Text FrozenHeadTimeText;
+
     bool timeFrozen = false;
 
     // The origin point the server is using
