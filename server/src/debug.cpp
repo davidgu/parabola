@@ -131,14 +131,22 @@ int main(int argc, char** argv){
   }
   std::cout<<"Reading Frames"<<std::endl;
   int curCam = 0;
+  int curRot[4] = {0};
   while(true){
     int key = waitKey(10);
-    if(key == 32){
+    if(key == 13){ // ENTER pressed, select diff camera
       curCam++;
       if(curCam == 4) curCam = 0;
+    }else if(key == 32){ // SPACE pressed, rotate cur cam
+      curRot[curCam] += 90;
+      if(curRot[curCam] == 360) curRot[curCam] = 0;
     }
     Mat frame;
     capArr[curCam].read(frame);
+    cv::Point center = cv::Point( frame.cols/2, frame.rows/2 );
+    double scale = 1.0;
+    cv::Mat rot_mat = cv::getRotationMatrix2D( center, curRot[curCam], scale);
+    warpAffine( frame, frame, rot_mat, frame.size() );
     custom_process_frame(frame);
   }
   return 0;
