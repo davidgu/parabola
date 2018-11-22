@@ -1,18 +1,31 @@
 #include <fstream>
-#include "cameraconfig.hpp"
+#include <thread>
+
 #include "opencv2/opencv.hpp"
+
 #include "vector3.hpp"
 #include "vector2.hpp"
-#include <thread>
 #include "trackedobject.hpp"
+#include "cameraconfig.hpp"
+#include "vectorutils.hpp"
+#include "simclock.hpp"
+
+const bool THREE_CAMERA = false;
 
 using namespace cv;
 
 VideoCapture capArr[4];
+
 double topDist = 1.5;
 double upDist = 2.0;
 double rightDist = 2.0;
 double sideCamHeights = 1.4;
+
+// 0 -> Top camera
+// 1 -> North camera
+// 2 -> East camera
+Vector3 camWPoss[3];
+
 int camIdx[3];
 int rotCamIdx[3];
 int coneCali[2][3];
@@ -21,9 +34,28 @@ int ballCali2[2][3];
 double topRotTheta;
 Mat frames[3];
 
-void read_file(){
+TrackedObject tobject;
+SimClock simClock;
+
+void read_config_file(){
   std::ifstream infile("config.txt");
-  infile>>topDist>>upDist>>rightDist>>sideCamHeights;
+
+  double topCameraHeight;
+  infile>>topCameraHeight;
+  Vector3 camWPoss[0] = Vector3(0, topCameraHeight, 0);
+
+  double northCameraX;
+  double northCameraY;
+  infile>> northCameraX;
+  infile>> northCameraY;
+  Vector3 camWPoss[1] = Vector3(northCameraX, northCameraY, 0);
+
+  double eastCameraZ;
+  double eastCameraY;
+  infile>> eastCameraZ;
+  infile>> eastCameraY;
+  Vector3 camWPoss[2] = Vector3(0, eastCameraY, eastCameraZ);
+
   infile>>camIdx[0]>>camIdx[1]>>camIdx[2];
   infile>>rotCamIdx[0]>>rotCamIdx[1]>>rotCamIdx[2];
   infile>>coneCali[0][0]>>coneCali[0][1]>>coneCali[0][2]>>coneCali[1][0]>>coneCali[1][1]>>coneCali[1][2];
@@ -47,18 +79,6 @@ Mat detect_cones(Mat frame){
   Scalar orange_upper(coneCali[1][0], coneCali[1][1], coneCali[1][2]);
   Mat orange_mask;
   inRange(hsv, orange_lower, orange_upper,orange_mask);
-
-  /*Mat detected_edges;
-    blur( orange_mask, detected_edges, Size(3,3) );
-    double lowThreshold = 14.0;
-    double ratio = 3.0;
-    int kernel_size = 3;
-    Canny( detected_edges, detected_edges, lowThreshold, lowThreshold*ratio, kernel_size );
-    dilate(detected_edges, detected_edges, 1);
-    erode(detected_edges, detected_edges, 1);
-    Mat dst;
-    dst = Scalar::all(0);
-    frame.copyTo( dst, detected_edges);*/
   return orange_mask;
 }
 
@@ -71,7 +91,7 @@ Mat findBiggestBlob(Mat & matImage){
   Mat newImg(matImage.size(), CV_64FC1);
   newImg = 0;
 
-  findContours( matImage, contours, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
+  findContours( matImage, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); // Find the contours in the image
 
   for( int i = 0; i< contours.size(); i++ ) {// iterate through each contour. 
     double a=contourArea( contours[i],false);  //  Find the area of contour
@@ -106,7 +126,6 @@ Vector2 detect_ball(Mat frame){
   inRange(hsv, purple_lower2, purple_upper2, purple_mask2);
   addWeighted(purple_mask1, 1.0, purple_mask2, 1.0, 0.0, purple_mask);
 
-
   Mat final_image;
   purple_mask.convertTo(final_image, -1, 4, 0); 
 
@@ -125,39 +144,35 @@ Vector2 detect_ball(Mat frame){
   // find the center of mass of the bitmask image
   Moments m = moments(final_image, false);
   Point p1(m.m10/m.m00, m.m01/m.m00);
-  // std::cout << Mat(p1).at<int>(0,1) << std::endl;
+
   int x = Mat(p1).at<int>(0,0);
   int y = Mat(p1).at<int>(0,1);
-  if(x != -2147483648){
-    //std::cout<<x<<std::endl;
-    //the ball is in view do something
-  }
-  circle(frame, p1, 5, Scalar(128,0,0), -1); // plot the point of the ball
-  imshow("asdsa",frame);
 
+  // If something is detected
+  if(x != -2147483648){
+    // Implement arduino serial communication
+  }
 
   // you can make it return a vector 2 of the location of the ball:
   return Vector2(x,y);
 }
 
-void start_reading(int curCam){
+Vector2 cam_read_frame_pos(int curCam){
   Vector2 ballLoc;
-  while(true){
-    capArr[camIdx[curCam]].read(frames[curCam]);
+  capArr[camIdx[curCam]].read(frames[curCam]);
+  ballLoc = detect_ball(frames[curCam]);
+  return ballLoc;
+}
 
-    ballLoc = detect_ball(frames[curCam]);
-    if(curCam == 0){ // This cameras needs to rotation dewarp
-      ballLoc = fix_top_angle(ballLoc);
-    }
-
-
-  }
+// Required for camera 0 ~ top camera
+Vector2 correct_image_angle(Vector2 in){
+  return fix_top_angle(in);
 }
 
 int main(){
   // read from config file and initialize params
   std::cout<<"Reading config file"<<std::endl;
-  read_file();
+  read_config_file();
 
   std::cout<<"Initializing Cameras"<<std::endl;
   for(int i = 0 ; i < 4; i++){
@@ -170,16 +185,49 @@ int main(){
     capArr[i].set(CV_CAP_PROP_EXPOSURE, 0);
   }
 
+  // Start simclock
+  simClock = SimClock();
 
   std::cout<<"Reading Frames"<<std::endl;
-  /*
-  for(int curCam = 0 ; curCam < 1 ; curCam++){
-    std::thread c1(start_reading,curCam);
-    std::thread c2(start_reading,curCam);
-    std::thread c3(start_reading,curCam);
-  }*/
 
-  for(int i = 0; i < 3; i ++){
+  std::pair<Vector3, Vector3> lines[3];
 
+  while(true){
+    if(THREE_CAMERA){
+      clock_t start = clock();
+
+      for(int i = 0; i < 3; i ++){
+        Vector2 bpos = cam_read_frame_pos(camIdx[i]);
+        if(i == 0){
+          bpos = correct_image_angle(bpos);
+        }
+        lines[i] = build_vector(i, camWPoss[i], bpos);
+      }
+      Vector3 ball_pred_pos = find_intersection(lines[0], lines[1], lines[2]);
+      tobject.add_pos(simClock.get_abstime(), ball_pred_pos);
+
+      clock_t end = clock();
+      clock_t elapsed = end - start;
+
+      std::cout << ball_pred_pos << std::endl;
+      std::cout << "Time Elapsed: "<< elapsed << std::endl;
+    }
+    // This is the two camera case
+    else{
+      clock_t start = clock();
+
+      for(int i = 0; i < 2; i ++){
+        Vector2 bpos = cam_read_frame_pos(camIdx[i]);
+        lines[i] = build_vector(i, camWPoss[i], bpos);
+      }
+      Vector3 ball_pred_pos = find_intersection(lines[0], lines[1]);
+      tobject.add_pos(simClock.get_abstime(), ball_pred_pos);
+
+      clock_t end = clock();
+      clock_t elapsed = end - start;
+
+      std::cout << ball_pred_pos << std::endl;
+      std::cout << "Time Elapsed: "<< elapsed << std::endl;
+    }
   }
 }
