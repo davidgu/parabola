@@ -6,7 +6,6 @@
 #include "vector3.hpp"
 #include "vector2.hpp"
 #include "trackedobject.hpp"
-#include "cameraconfig.hpp"
 #include "vectorutils.hpp"
 #include "simclock.hpp"
 
@@ -42,19 +41,19 @@ void read_config_file(){
 
   double topCameraHeight;
   infile>>topCameraHeight;
-  Vector3 camWPoss[0] = Vector3(0, topCameraHeight, 0);
+  camWPoss[0] = Vector3(0, topCameraHeight, 0);
 
   double northCameraX;
   double northCameraY;
   infile>> northCameraX;
   infile>> northCameraY;
-  Vector3 camWPoss[1] = Vector3(northCameraX, northCameraY, 0);
+  camWPoss[1] = Vector3(northCameraX, northCameraY, 0);
 
   double eastCameraZ;
   double eastCameraY;
   infile>> eastCameraZ;
   infile>> eastCameraY;
-  Vector3 camWPoss[2] = Vector3(0, eastCameraY, eastCameraZ);
+  camWPoss[2] = Vector3(0, eastCameraY, eastCameraZ);
 
   infile>>camIdx[0]>>camIdx[1]>>camIdx[2];
   infile>>rotCamIdx[0]>>rotCamIdx[1]>>rotCamIdx[2];
