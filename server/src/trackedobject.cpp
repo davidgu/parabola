@@ -66,6 +66,42 @@ Vector3 TrackedObject::get_tpos(double abstime){
     return ppos;
 }
 
+// I want a function that will count points to predict when the velocity of the object is fast enough then stops predicting when it has stopped moving
+
+bool start_prediction(double max_velocity){
+  if(get_velocity(0) > max_velocity) return 1;
+}
+
+bool stop_prediction(int consider_last_n_points, double max_velocity){
+  int vec_size = past_pos.size();
+  if(!(past_pos.size()>=2)){
+    int num_consider = min(consider_last_n_points, vec_size);
+
+    for(int i = vec_size - num_consider; i < vec_size - 1; i++){
+      if(get_avg_velocity(i,i+1) > max_velocity) return false;
+    }
+    return true;
+  }else{
+    throw std::runtime_error("Cannot calculate velocity when past position vector is empty!");
+  }
+} 
+
+Vector3 get_avg_velocity(int start, int end){
+  int vec_size = past_pos.size();
+  if(end == -1) end = vec_size();
+  if(end < start) throw std::logic_error("Can't get average velocity of a negative range");
+  if(end > vec_size) throw std::logic_error("Can't return an average velocity over " + std::to_string(start) + " objects when only " + std::to_string(vec_size) + " objects have been recorded";
+
+  double tot_time = 0.0;
+  Vector3 first_dist = past_pos[start];
+  Vector3 last_dist = past_pos[end - 1];
+
+  for(int i = start; i < end; i++){
+    tot_time += past_pos[i].first;
+  }
+  return (last_dist - first_dist)/tot_time;
+}
+
 Vector3 TrackedObject::get_velocity(double deltat, int samples){
     if(!(past_pos.size()>=2)){
         int vec_size = past_pos.size();

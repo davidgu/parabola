@@ -37,6 +37,20 @@ class TrackedObject{
         // Negative deltat will return predicted times in the past.
         // Negative deltat is not yet implemented.
         Vector3 predict_pos(double deltat);
+        
+        // Recorded positions from now on should be contributing
+        // to the predicted location of the object
+        bool start_prediction(double max_velocity = 0.5);
+
+        // Recorded positions from now on should not be contributing
+        // to the predicted location of the object
+        bool stop_prediction(int consider_last_n_points = 10, double max_velocity = 0.5);
+
+        // Returns the average velocity of points in between 2 indexes
+        // of past_pos array. If no end index is specified, this function
+        // defaults to returning the average velocity between the start
+        // index and the end of the past_pos array
+        Vector3 get_avg_velocity(int start, int end = -1);
 
         // Samples refers to the number of position vectors considered
         // in the velocity calculation. Passing that variable is not
