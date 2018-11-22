@@ -4,6 +4,7 @@
 #include "vector3.hpp"
 #include "vector2.hpp"
 #include <thread>
+#include "trackedobject.hpp"
 
 using namespace cv;
 
@@ -171,9 +172,14 @@ int main(){
 
 
   std::cout<<"Reading Frames"<<std::endl;
+  /*
   for(int curCam = 0 ; curCam < 1 ; curCam++){
     std::thread c1(start_reading,curCam);
     std::thread c2(start_reading,curCam);
     std::thread c3(start_reading,curCam);
+  }*/
+
+  for(int i = 0; i < 3; i ++){
+
   }
 }
