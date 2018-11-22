@@ -136,15 +136,15 @@ std::pair<Mat,Mat> capture_frames(VideoCapture cam1, VideoCapture cam2){
         detect_ball(frame1, nullptr);
         detect_ball(frame2, nullptr);
 
-        imshow("Camera 1", frame1);
-        imshow("Camera 2", frame2);
-
         int key = waitKey(1);
 
         // space bar
         if(key == 32){
             return std::pair<Mat, Mat>(frame1, frame2);
         }
+
+        imshow("Camera 1", frame1);
+        imshow("Camera 2", frame2);
     }
 }
 
