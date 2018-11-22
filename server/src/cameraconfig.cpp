@@ -89,9 +89,9 @@ void CameraConfig::match_cams(){
     if(curCam == 0){
       putText(frames[curCamShowing], "Top", cv::Point2f(50,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,255), 2);
     }else if(curCam == 1){
-      putText(frames[curCamShowing], "Up", cv::Point2f(50,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,255), 2);
+      putText(frames[curCamShowing], "North", cv::Point2f(50,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,255), 2);
     }else{
-      putText(frames[curCamShowing], "Right", cv::Point2f(50,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,255), 2);
+      putText(frames[curCamShowing], "East", cv::Point2f(50,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,255), 2);
     }
     cv::imshow("Camera", frames[curCamShowing]);
   }
@@ -133,13 +133,13 @@ void CameraConfig::fix_cam_rot(){
     if(curCam == 0){
       putText(frames[curCam], "Top", cv::Point2f(50,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,255), 2);
     }else if(curCam == 1){
-      putText(frames[curCam], "Up", cv::Point2f(50,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,255), 2);
+      putText(frames[curCam], "North", cv::Point2f(50,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,255), 2);
     }else{
-      putText(frames[curCam], "Right", cv::Point2f(50,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,255), 2);
+      putText(frames[curCam], "East", cv::Point2f(50,100), cv::FONT_HERSHEY_DUPLEX, 1,  cv::Scalar(0,0,255), 2);
     }
     cv::imshow("Camera", displayFrame);
   }
-  std::cout<<"Top rot: "<<rotCamIdx[0]<<", Up rot: "<<rotCamIdx[1]<<", Right rot: "<<rotCamIdx[2]<<std::endl;
+  std::cout<<"Top rot: "<<rotCamIdx[0]<<", North rot: "<<rotCamIdx[1]<<", East rot: "<<rotCamIdx[2]<<std::endl;
 }
 
 void CameraConfig::calibrate_cones(){
@@ -295,13 +295,13 @@ int CameraConfig::build_camera_config(){
     std::cout<<"Four cameras need to be connected. The number of cameras are: "<<numCams<<std::endl;
     return;
     }*/
-  std::cout<<"4 Cameras connected. Camera Location Detection Running."<<std::endl;
+  //  std::cout<<"4 Cameras connected. Camera Location Detection Running."<<std::endl;
 
   // idx 0 = top, idx 1 = up, idx 2 = right
 
   for(int i = 0 ; i < 4; i++){
     if(!capArr[i].open(i)){
-      std::cout<<"can't open cam: "<<i<<std::endl;
+      std::cout<<"Can't open cam: "<<i<<std::endl;
     }
     capArr[i].set(CV_CAP_PROP_FRAME_WIDTH,640);
     capArr[i].set(CV_CAP_PROP_FRAME_HEIGHT,480);
@@ -309,18 +309,17 @@ int CameraConfig::build_camera_config(){
     capArr[i].set(CV_CAP_PROP_EXPOSURE, 0);
   }
   CameraConfig::match_cams();
-  topDist = 1.5;
-  upDist = 2.0;
-  rightDist = 2.0;
-  sideCamHeights = 1.4;
   CameraConfig::fix_cam_rot();
 
   // Using the top camera we need to calibrate the color:
+  if(MANUALLY_MODIFY_MASKS){
+    std::cout<<"Manually calibrating cones"<<std::endl;
+    CameraConfig::calibrate_cones();
 
-  // Calibrate cones
-  // CameraConfig::calibrate_cones();
-
-  // Calibrate Ball
+    std::cout<<"Manually calibrating ball"<<std::endl;
+    CameraConfig::calibrate_ball(1);
+    CameraConfig::calibrate_ball(2);
+  }
 
   std::cout<<"Detecting Cones"<<std::endl;
   CameraConfig::detect_cones();
@@ -331,7 +330,7 @@ int CameraConfig::build_camera_config(){
   // Why do we need to locations of the cones? We need to know how to dewarp
 
   // first line is the indexes of the camera
-  // next we have the distance of the cameras to the middle, topDist, upDist, rightDist, sideCamHeights
+  // next we have the position vectors of the 3 cameras
   // next is the rotation params for each camera (90 degrees)
   // next is the photo params for the colour of the cones
   // next is the photo params for the colour of the ball1
@@ -343,7 +342,7 @@ int CameraConfig::build_camera_config(){
   std::cout<<"Saving Config File"<<std::endl;
   std::ofstream myfile;
     myfile.open ("config.txt");
-    myfile << topDist<<" "<<upDist<<" "<<rightDist<<" "<<sideCamHeights<<std::endl;
+    myfile << topCameraHeight<<" "<<northCameraX<<" "<<northCameraY<<" "<<eastCameraZ<<" "<<eastCameraY<<std::endl;
     myfile << camIdx[0]<<" "<<camIdx[1]<<" "<<camIdx[2]<<std::endl;
     myfile << rotCamIdx[0]<<" "<<rotCamIdx[1]<<" "<<rotCamIdx[2]<<std::endl;
     myfile << coneCali[0][0]<<" "<<coneCali[0][1]<<" "<<coneCali[0][2]<<" "<<coneCali[1][0]<<" "<<coneCali[1][1]<<" "<<coneCali[1][2]<<std::endl;
