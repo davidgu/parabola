@@ -30,16 +30,13 @@ Mat detect_cones(Mat frame){
 Mat detect_cones_day(Mat frame){
   GaussianBlur( frame, frame, Size(9, 9), 4, 4 );
   frame = frame +  Scalar(-130, -130, -130);
-  //frame.convertTo(frame, -1, , 0);
-  //read input
-  //   GaussianBlur( frame, frame, Size(11, 11), 4, 4 );
+
   Mat hsv;
-  //note hsv range is from [0,179], [0,255], [0,255] (Hue, Saturation, Value)
   cvtColor(frame, hsv, CV_BGR2HSV);
-  Scalar orange_lower1(0,50,50); // try 5 and 10 for the first index . that works pretty well // 2 200, 150
+  Scalar orange_lower1(0,50,50);
   Scalar orange_upper1(10,255,255);
 
-  Scalar orange_lower2(170,30,30); // try 5 and 10 for the first index . that works pretty well // 2 200, 150
+  Scalar orange_lower2(170,30,30);
   Scalar orange_upper2(179,255,255);
   Mat orange_mask;
   inRange(hsv, orange_lower1, orange_upper1,orange_mask);
