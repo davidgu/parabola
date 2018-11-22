@@ -184,7 +184,7 @@ void calibrate(VideoCapture cam1, VideoCapture cam2){
     std::vector<Point3f> worldCoords = {
         Point3f(0,0,0),
         Point3f(0,0,1),
-        Point3f(0,1,0),
+        Point3f(0,-1,0),
         Point3f(1,0,0),
     };
 
@@ -202,7 +202,7 @@ void calibrate(VideoCapture cam1, VideoCapture cam2){
     fpair = capture_frames(cam1, cam2);
     frame1Coords.push_back(detect_ball(fpair.first, nullptr));
     frame2Coords.push_back(detect_ball(fpair.second, nullptr));
-    std::cout<<"Bring the ball to (0, 1, 0) and press the space bar"<<std::endl;
+    std::cout<<"Bring the ball to (0, -1, 0) and press the space bar"<<std::endl;
     fpair = capture_frames(cam1, cam2);
     frame1Coords.push_back(detect_ball(fpair.first, nullptr));
     frame2Coords.push_back(detect_ball(fpair.second, nullptr));
