@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include "opencv2/calib3d.hpp"
 #include "opencv2/opencv.hpp"
@@ -11,6 +12,8 @@ const Mat cameraMatrix = (Mat1d(3, 3)<< 4.4740797894345377e+02, 0.0, 320.0, 0.0,
 const Mat distortionCoefficients = (Mat1d(1, 5)<< 1.7657493713843387e-02, -1.6646113914955049e-01, 0.0, 0.0, 2.6525645359464572e-01); 
 
 Mat projMat1, projMat2;
+Point3f virtualOrigin;
+float scale;
 
 VideoCapture capArr[4];
 int idxToCam[4];
@@ -173,12 +176,29 @@ std::pair<Mat,Mat> capture_frames(VideoCapture cam1, VideoCapture cam2){
     }
 }
 
+Point3f triangulate(Point2f camera1Point, Point2f camera2Point){
+    cv::Mat pnt3D(4,1,CV_64F);
+    std::vector<Point2d> cam1pnts = {camera1Point};
+    std::vector<Point2d> cam2pnts = {camera2Point};
+    triangulatePoints(projMat1, projMat2, cam1pnts, cam2pnts, pnt3D);
+    float x = pnt3D.at<double>(0,0) / pnt3D.at<double>(3,0);
+    float y = pnt3D.at<double>(1,0) / pnt3D.at<double>(3,0);
+    float z = pnt3D.at<double>(2,0) / pnt3D.at<double>(3,0);
 
+    return Point3f(x,y,z);
+}
 
 // Gets the projection matrices for the two cameras
 void calibrate(VideoCapture cam1, VideoCapture cam2){
     Mat frames1[4];
     Mat frames2[4];
+    
+    Point2f cam1Origin;
+    Point2f cam2Origin;
+
+    Point2f cam1XPlus1;
+    Point2f cam2XPlus1;
+
     Mat rvec1, rvec2, tvec1, tvec2;
 
     std::vector<Point3f> worldCoords = {
@@ -198,6 +218,8 @@ void calibrate(VideoCapture cam1, VideoCapture cam2){
     fpair = capture_frames(cam1, cam2);
     frame1Coords.push_back(detect_ball(fpair.first, nullptr));
     frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+    cam1Origin = (detect_ball(fpair.first, nullptr));
+    cam2Origin = (detect_ball(fpair.second, nullptr));
     std::cout<<"Bring the ball to (0, 0, 1) and press the space bar"<<std::endl;
     fpair = capture_frames(cam1, cam2);
     frame1Coords.push_back(detect_ball(fpair.first, nullptr));
@@ -210,6 +232,8 @@ void calibrate(VideoCapture cam1, VideoCapture cam2){
     fpair = capture_frames(cam1, cam2);
     frame1Coords.push_back(detect_ball(fpair.first, nullptr));
     frame2Coords.push_back(detect_ball(fpair.second, nullptr));
+    cam1XPlus1 = (detect_ball(fpair.first, nullptr));
+    cam2XPlus1 = (detect_ball(fpair.second, nullptr));
 
     // Obtain rvec and tvec
     solvePnP(worldCoords, frame1Coords, cameraMatrix, distortionCoefficients,rvec1, tvec1);
@@ -228,23 +252,117 @@ void calibrate(VideoCapture cam1, VideoCapture cam2){
     rotMT2.push_back(tvec2.reshape(1, 1));
     projMat1 = cameraMatrix * rotMT1.t();
     projMat2 = cameraMatrix * rotMT2.t();
+
 }
 
-void triangulate(Point2f camera1Point, Point2f camera2Point){
-    cv::Mat pnt3D(4,1,CV_64F);
-    std::vector<Point2d> cam1pnts = {camera1Point};
-    std::vector<Point2d> cam2pnts = {camera2Point};
-    triangulatePoints(projMat1, projMat2, cam1pnts, cam2pnts, pnt3D);
-    float x = pnt3D.at<double>(0,0) / pnt3D.at<double>(3,0);
-    float y = pnt3D.at<double>(1,0) / pnt3D.at<double>(3,0);
-    float z = pnt3D.at<double>(2,0) / pnt3D.at<double>(3,0);
+void calibrate_vorigin(VideoCapture cam1, VideoCapture cam2){
+    std::vector<Point2f> frame1Coords;
+    std::vector<Point2f> frame2Coords;
 
-    std::cout << "Predicted location is: ("<<x<<", "<<y<<", "<<z<<")"<<std::endl;
+    Point2f cam1Origin;
+    Point2f cam2Origin;
+
+    Point2f cam1XPlus1;
+    Point2f cam2XPlus1;
+
+    std::pair<Mat, Mat> fpair;
+    std::cout<<"Coordinates will be expressed as (X, Y, Z)"<<std::endl;
+    std::cout<<"Make sure the ball is visible by both cameras at all times."<<std::endl;
+    std::cout<<"Bring the ball to (0, 0, 0) and press the space bar"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    cam1Origin = (detect_ball(fpair.first, nullptr));
+    cam2Origin = (detect_ball(fpair.second, nullptr));
+
+    std::cout<<"Bring the ball to (1, 0, 0) and press the space bar"<<std::endl;
+    fpair = capture_frames(cam1, cam2);
+    cam1XPlus1 = (detect_ball(fpair.first, nullptr));
+    cam2XPlus1 = (detect_ball(fpair.second, nullptr));
+
+    // Find virtual origin
+    virtualOrigin = triangulate(cam1Origin, cam2Origin);
+
+    // Find scaling factor
+    Point3f virtualXPlus1 = triangulate(cam1XPlus1, cam2XPlus1) - virtualOrigin;
+    if(scale !=0){
+        scale = 1/(virtualXPlus1.x);
+    }
+    else{
+        scale = 1;
+    }
+}
+
+bool fileExists(const std::string name)
+{
+    std::ifstream infile(name.c_str());
+    return infile.good();
+}
+
+// Checks if a camera configuration exists, and loads it if it does
+int load_configuration(const std::string camProjMat1, 
+                        const std::string camProjMat2,
+                        const std::string vOrigin){
+    int retStatus = 0;
+    if(fileExists(camProjMat1) && fileExists(camProjMat2)){
+        FileStorage cpm1fs(camProjMat1, FileStorage::READ);
+        cpm1fs["data"] >> projMat1;
+
+        FileStorage cpm2fs(camProjMat2, FileStorage::READ);
+        cpm2fs["data"] >> projMat2;
+
+        retStatus++;
+        if(fileExists(vOrigin)){
+            FileStorage vo(vOrigin, FileStorage::READ);
+            vo["data"] >> virtualOrigin;
+        }
+    }
+
+    // retStatus will be 2 if camera matrixes and virtual origin data both exist
+    // retStatus will be 1 if only camera matrixes exist
+    // retStatus will be 0 if no configuration data exists
+    return retStatus;
+}
+
+// Saves camera projection matrices and virtual origin data
+// Does not overwrite
+void save_configuration(const std::string camProjMat1,
+                        const std::string camProjMat2,
+                        const std::string vOrigin){
+    if(!fileExists(camProjMat1)){
+        FileStorage fs(camProjMat1, FileStorage::WRITE);
+        fs << "data" << projMat1;
+    }
+    if(!fileExists(camProjMat2)){
+        FileStorage fs(camProjMat2, FileStorage::WRITE);
+        fs << "data" << projMat2;
+    }
+    if(!fileExists(vOrigin)){
+        FileStorage fs(vOrigin, FileStorage::WRITE);
+        fs << "data" << vOrigin;
+    }
 }
 
 int main(){
     configure_cameras();
-    calibrate(capArr[idxToCam[0]], capArr[idxToCam[1]]);
+    // No saved data exists
+    if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml")==0){
+        calibrate(capArr[idxToCam[0]], capArr[idxToCam[1]]);
+        calibrate_vorigin(capArr[idxToCam[0]], capArr[idxToCam[1]]))
+        save_configuration();
+    }
+    // Virtual origin data does not exist 
+    else if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml") == 1){
+        calibrate_vorigin(capArr[idxToCam[0]], capArr[idxToCam[1]]))
+        save_configuration();
+    }
+    // All data exists
+    else if(load_configuration("cpm1.xml", "cpm2.xml", "vo.xml") == 2){
+        // Do nothing
+    }
+    else{
+        // Fail if an invalid load configuration value is returned
+        assert(false);
+    }
+
     Mat frame1, frame2;
     for(;;){
         capArr[idxToCam[0]].read(frame1);
@@ -254,7 +372,9 @@ int main(){
         if(success){
             Point2f p2 = detect_ball(frame2, &success);
             if(success){
-                triangulate(p1, p2);
+                Point3f predict = scale*(triangulate(p1, p2)-virtualOrigin);
+                std::cout << "Virtual origin: "<<virtualOrigin;
+                std::cout << "Predicted location is: ("<<predict.x<<", "<<predict.y<<", "<<predict.z<<")"<<std::endl;
             }
         }
     }
