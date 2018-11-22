@@ -11,6 +11,7 @@ class SimClock{
         clock_t start;
 
     public:
+        SimClock();
         // Returns time elapsed since the start of the simulation
         double get_abstime();
 };
