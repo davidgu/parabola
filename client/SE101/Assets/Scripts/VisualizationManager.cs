@@ -249,10 +249,10 @@ public class VisualizationManager : MonoBehaviour {
 
     // Clear stored object path data, and clear object trails
     public void ClearPathData(){
-        foreach(GameObject trailItem in objectTrails){
-            Destroy(trailItem);
+        for (int i = 0; i < objectTrails.Count; i++){
+            Destroy(objectTrails[i]);
         }
-
+        objectTrails = new List<GameObject>();
         tvpairs = new List<TVPair>();
     }
 
