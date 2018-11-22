@@ -281,15 +281,16 @@ public class VisualizationManager : MonoBehaviour {
     }
 
     public void ChangeTrailDisplayRangeSlider(){
-        ChangeTrailDisplayRange(timeSlider.value);
+        visualizedTime = frozenHeadTime + timeSlider.value;
+        ChangeTrailDisplayRange(visualizedTime);
     }
 
-    // Display trail data items up to ${deltatime} from the present
+    // Display trail data items up to ${time}
     // ${deltatime} should be negative
-    void ChangeTrailDisplayRange(float deltatime){
-        double presentTime = tvpairs[tvpairs.Count - 1].GetTime();
+    void ChangeTrailDisplayRange(double time){
         for (int i = tvpairs.Count - 1; i >= 0; i--){
-            if (tvpairs[i].GetTime() < (presentTime - deltatime)){
+            if (tvpairs[i].GetTime() < (time)){
+                Debug.LogError("Displaying up to index: " + i);
                 ChangeTrailDisplayRange(i);
                 break;
             }
