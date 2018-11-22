@@ -1,7 +1,7 @@
 #include "vectorutils.hpp"
 
-const int IMG_WIDTH = 1920;
-const int IMG_HEIGHT = 1080;
+const int IMG_WIDTH = 640;
+const int IMG_HEIGHT = 480;
 
 // Converts a pixel coordinate from lower left corner origin
 // to center origin
@@ -19,6 +19,8 @@ std::pair <Vector3,Vector3> build_vector(int camIdx, double cam_pfocallength,
     // ball_ppos Vector2 is given in terms of normalized pixel coordinates
     Vector3 direction;
     Vector3 point;
+
+    ball_ppos = pnormalize_origin(ball_ppos);
 
     switch(camIdx){
         // Top camera
