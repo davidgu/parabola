@@ -106,39 +106,8 @@ Mat findBiggestBlob(Mat & matImage){
 }
 
 Vector2 detect_ball(Mat frame, bool *success){
-  //GaussianBlur( frame, frame, Size(11, 11), 4, 4);
-
-  frame = frame +  Scalar(-150, -150, -150);
-  frame.convertTo(frame, -1, 1.5, 0); //increase the contrast by the middle number
-  Mat hsv, hsv2;
-  cvtColor(frame, hsv, CV_BGR2HSV);
-  hsv.convertTo(hsv2, -1, 2, 0); 
-  Scalar purple_lower1(ballCali1[0][0], ballCali1[0][1], ballCali1[0][2]); 
-  Scalar purple_upper1(ballCali1[1][0], ballCali1[1][1], ballCali1[1][2]);
-
-  Scalar purple_lower2(ballCali2[0][0], ballCali2[0][1], ballCali2[0][2]); 
-  Scalar purple_upper2(ballCali2[1][0], ballCali2[1][1], ballCali2[1][2]);
-
-  Mat purple_mask;
-  Mat purple_mask1;
-  Mat purple_mask2;
-  inRange(hsv, purple_lower1, purple_upper1, purple_mask1);
-  inRange(hsv, purple_lower2, purple_upper2, purple_mask2);
-  addWeighted(purple_mask1, 1.0, purple_mask2, 1.0, 0.0, purple_mask);
-
-  Mat final_image;
-  purple_mask.convertTo(final_image, -1, 4, 0); 
-  //dilate(final_image, final_image, Mat(), Point(-1, -1), 2, 1, 1);
-  //dilate(final_image, final_image, Mat(), Point(-1, -1), 2, 1, 1);
-
-  //remove the cones from the mask
-  Mat coneMask = detect_cones(frame);
-  dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1);
-  dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1);
-  dilate(coneMask, coneMask, Mat(), Point(-1, -1), 2, 1, 1);
-  //we don't want to fill in the contours here because it might cover up the ball
-  coneMask = ~coneMask;
-  final_image = final_image & coneMask;
+  GaussianBlur( frame, frame, Size(11, 11), 4, 4);
+  Mat final_image = detect_cones(frame);
   final_image = findBiggestBlob(final_image);
 
   //start analyzing the image
