@@ -25,7 +25,7 @@ class CameraConfig{
         int rotCamIdx[3];
         int coneCali[2][3] = {{1,150,200},{15,255,255}};
         int ballCali1[2][3] = {{0,100,100},{10,255,255}};
-        int ballCali2[2][3] = {{105,80,80},{179,255,255}};
+        int ballCali2[2][3] = {{105,80,80},{180,255,255}};
         double topRotTheta;        
 
     public:
