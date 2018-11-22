@@ -19,14 +19,14 @@ Vector3 TrackedObject::predict_landing_point(){
 
     double landing_deltat = predict_landing_deltatime();
 
-    Vector3 pred_pos = past_pos[past_pos.size - 1] + (vel*landing_deltat);
+    Vector3 pred_pos = past_pos[past_pos.size() - 1].second + (vel*landing_deltat);
     pred_pos.y = 0;
 
     return pred_pos;
 }
 
 double TrackedObject::predict_landing_deltatime(){
-    double cur_y = past_pos[past_pos.size - 1].second.y;
+    double cur_y = past_pos[past_pos.size() - 1].second.y;
     double deltat = cur_y/grav;
     return deltat;
 }
@@ -37,7 +37,7 @@ const std::vector<std::pair<double, Vector3>> TrackedObject::get_all_past_tvpair
 
 const std::string TrackedObject::get_all_past_tvpair_json(){
     std::string ret = "{\"data\":[";
-    for(int i = past_pos.size - 1; i>=0; i--){
+    for(int i = past_pos.size() - 1; i>=0; i--){
         ret += get_tvpair_json(i);
     }
     ret += "]}";
@@ -65,12 +65,12 @@ Vector3 TrackedObject::get_tpos(double abstime){
     return ppos;
 }
 
-Vector3 TrackedObject::get_velocity(double deltat, int samples = 2){
-    if(!past_pos.size()>=2){
+Vector3 TrackedObject::get_velocity(double deltat, int samples){
+    if(!(past_pos.size()>=2)){
         int vec_size = past_pos.size();
         std::pair<double, Vector3> ppos1;
         std::pair<double, Vector3> ppos2;
-        if(deltat = 0){
+        if(deltat == 0){
             ppos1 = past_pos[vec_size-1];
             ppos2 = past_pos[vec_size-2];
         }
