@@ -105,8 +105,7 @@ Mat findBiggestBlob(Mat & matImage){
   return newImg;
 }
 
-Vector2 detect_ball(Mat frame){
-  waitKey(10);
+Vector2 detect_ball(Mat frame, bool *success){
   GaussianBlur( frame, frame, Size(11, 11), 4, 4);
 
   Mat hsv, hsv2;
@@ -150,6 +149,10 @@ Vector2 detect_ball(Mat frame){
   // If something is detected
   if(x != -2147483648){
     // Implement arduino serial communication
+    *success = true;
+  }
+  else{
+    *success = false;
   }
 
   // you can make it return a vector 2 of the location of the ball:
@@ -159,7 +162,14 @@ Vector2 detect_ball(Mat frame){
 Vector2 cam_read_frame_pos(int idx){
   Vector2 ballLoc;
   capArr[camIdx[idx]].read(frames[idx]);
-  ballLoc = detect_ball(frames[idx]);
+  bool detectSuccess = false;
+  ballLoc = detect_ball(frames[idx], &detectSuccess);
+  if(detectSuccess){
+    std::cout << "Camera "<< idx << ": DETECTED"<<std::endl;
+  }
+  else{
+    std::cout << "Camera "<< idx << ": NOT DETECTED"<<std::endl;
+  }
   return ballLoc;
 }
 
@@ -192,6 +202,8 @@ int main(){
   std::pair<Vector3, Vector3> lines[3];
 
   while(true){
+    // Clear terminal
+    std::cout << "\033[2J\033[1;1H";
     if(THREE_CAMERA){
       clock_t start = clock();
 
