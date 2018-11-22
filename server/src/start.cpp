@@ -267,11 +267,11 @@ int main(){
     // This is the two camera case
     else{
       bool success = false;
-      for(int i = 1; i < 2; i ++){
+      for(int i = 1; i < 3; i ++){
         Vector2 bpos = cam_read_frame_pos(i, &success);
         // If detection fails for one of the cameras, skip this set
         if(!success){
-          //break;
+          break;
         }
         lines[i] = build_vector(i, cam_pfocallength, camWPoss[i], bpos);
         //std::cout << "Camera "<<i<<" ~ point: "<<lines[i].first<<", vec: "<<lines[i].second<<std::endl;
