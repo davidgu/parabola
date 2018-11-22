@@ -10,16 +10,21 @@
 
 class CameraConfig{
     private:
+
+        const bool MANUALLY_MODIFY_MASKS = false;       
+
         int index;
         Vector3 position;
         cv::VideoCapture capArr[4];
+       
+        // Measurements are in metric units 
+        double topCameraHeight = 1.5;
+        double northCameraX = 2.0;
+        double northCameraY = 2.0;
+        double eastCameraZ = 2.0;
+        double eastCameraY = 2.0;
 
-        double topDist = 1.5;
-        double upDist = 2.0;
-        double rightDist = 2.0;
-        double sideCamHeights = 1.4;
-
-        // idx 0 = top, idx 1 = up, idx 2 = right
+        // idx 0 = Top, idx 1 = North, idx 2 = East
         int camIdx[3]; // Each index describes the cam number
         cv::Mat frames[4];
         int rotCamIdx[3];
