@@ -66,11 +66,26 @@ Vector3 TrackedObject::get_tpos(double abstime){
     return ppos;
 }
 
-// I want a function that will count points to predict when the velocity of the object is fast enough then stops predicting when it has stopped moving
 
-bool start_prediction(double max_velocity){
-  if(get_velocity(0) > max_velocity) return 1;
+bool start_prediction(double min_velocity){
+  if(get_velocity(0) > min_velocity) return 1;
 }
+
+// This version of start_prediction uses a range instead. We should test both
+/*bool start_prediction(int consider_last_n_points, double min_velocity){
+
+  int vec_size = past_pos.size();
+  if(!(past_pos.size()>=2)){
+    int num_consider = min(consider_last_n_points, vec_size);
+
+    for(int i = vec_size - num_consider; i < vec_size - 1; i++){
+      if(get_avg_velocity(i,i+1) < min_velocity) return false;
+    }
+    return true;
+  }else{
+    throw std::runtime_error("Cannot calculate velocity when past position vector is empty!");
+  }
+}*/
 
 bool stop_prediction(int consider_last_n_points, double max_velocity){
   int vec_size = past_pos.size();
@@ -89,8 +104,9 @@ bool stop_prediction(int consider_last_n_points, double max_velocity){
 Vector3 get_avg_velocity(int start, int end){
   int vec_size = past_pos.size();
   if(end == -1) end = vec_size();
-  if(end < start) throw std::logic_error("Can't get average velocity of a negative range");
-  if(end > vec_size) throw std::logic_error("Can't return an average velocity over " + std::to_string(start) + " objects when only " + std::to_string(vec_size) + " objects have been recorded";
+  if(end < start) throw std::logic_error("Cannot get average velocity of a negative range");
+  if(end > vec_size) throw std::logic_error("Cannot return an average velocity over " + std::to_string(start) + " objects when only " + std::to_string(vec_size) + " objects have been recorded";
+  if(start < 0) throw std::logic_error("Cannot get the average of an element with a negative index!");
 
   double tot_time = 0.0;
   Vector3 first_dist = past_pos[start];
