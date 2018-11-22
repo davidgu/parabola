@@ -119,7 +119,7 @@ void custom_process_frame(Mat frame){
 
 int main(int argc, char** argv){
   VideoCapture capArr[4];
-  std::cout<<"Initializing Cameras"<<std<<endl;
+  std::cout<<"Initializing Cameras"<<std::endl;
   for(int i = 0 ; i < 4; i++){
     if(!capArr[i].open(i)){
       std::cout<<"can't open cam: "<<i<<std::endl;
@@ -129,7 +129,7 @@ int main(int argc, char** argv){
     capArr[i].set(CV_CAP_PROP_AUTOFOCUS, 0);
     capArr[i].set(CV_CAP_PROP_EXPOSURE, 0);
   }
-  std::cout<<"Reading Frames"<<std<<endl;
+  std::cout<<"Reading Frames"<<std::endl;
   int curCam = 0;
   while(true){
     int key = waitKey(10);

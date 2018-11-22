@@ -106,7 +106,7 @@ Mat findBiggestBlob(Mat & matImage){
 }
 
 Vector2 detect_ball(Mat frame, bool *success){
-  GaussianBlur( frame, frame, Size(11, 11), 4, 4);
+  //GaussianBlur( frame, frame, Size(11, 11), 4, 4);
 
   Mat hsv, hsv2;
   cvtColor(frame, hsv, CV_BGR2HSV);
@@ -126,6 +126,8 @@ Vector2 detect_ball(Mat frame, bool *success){
 
   Mat final_image;
   purple_mask.convertTo(final_image, -1, 4, 0); 
+  //dilate(final_image, final_image, Mat(), Point(-1, -1), 2, 1, 1);
+  //dilate(final_image, final_image, Mat(), Point(-1, -1), 2, 1, 1);
 
   //remove the cones from the mask
   Mat coneMask = detect_cones(frame);
@@ -203,7 +205,7 @@ int main(){
 
   while(true){
     // Clear terminal
-    std::cout << "\033[2J\033[1;1H";
+    //std::cout << "\033[2J\033[1;1H";
     if(THREE_CAMERA){
       clock_t start = clock();
 
@@ -220,8 +222,8 @@ int main(){
       clock_t end = clock();
       clock_t elapsed = end - start;
 
-      std::cout << ball_pred_pos << std::endl;
-      std::cout << "Time Elapsed: "<< elapsed << std::endl;
+      //std::cout << ball_pred_pos << std::endl;
+      //std::cout << "Time Elapsed: "<< elapsed << std::endl;
     }
     // This is the two camera case
     else{
