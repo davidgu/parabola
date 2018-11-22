@@ -228,13 +228,16 @@ public class VisualizationManager : MonoBehaviour {
     // Cache new data from the server (do not display), and hold present timestamp
     // constant to allow for scrubbing through the timeline.
     void FreezeTime(){
-        
+        timeFrozen = true;
+
+        // Set frozen head time to current head time
+        frozenHeadTime = tvpairs[tvpairs.Count - 1].GetTime();
     }
 
     // Append cached position data to position list, and reset present
     // timestamp
     void UnfreezeTime(){
-        
+        timeFrozen = false;
     }
 
     // Clear stored object path data, and clear object trails
