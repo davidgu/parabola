@@ -29,13 +29,15 @@ std::pair <Vector3,Vector3> build_vector(int camIdx, double cam_pfocallength,
             point = cam_wpos;
             break;
         // North camera
+        // Side to side is movement in x. Looking down z axis.
         case 1:
-            direction = Vector3(cam_pfocallength, ball_ppos.y, ball_ppos.x);
+            direction = Vector3(ball_ppos.x, ball_ppos.y, cam_pfocallength);
             point = cam_wpos;
             break;
         // East camera
+        // Side to side is movement in z. Looking down x axis.
         case 2:
-            direction = Vector3(ball_ppos.x, ball_ppos.y, cam_pfocallength);
+            direction = Vector3(cam_pfocallength, ball_ppos.y, ball_ppos.x);
             point = cam_wpos;
             break;
         default:
