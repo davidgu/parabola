@@ -322,4 +322,22 @@ public class VisualizationManager : MonoBehaviour {
     public void LoadCalibrationTestData(){
         
     }
+
+    void UpdateDebugPanel(){
+        VisualizedTimeText.text = "Visualized Time: " + visualizedTime;
+        if(tvpairs.Count>0){
+            TVPHTimeText.text = "TVPHTime: " + tvpairs[tvpairs.Count - 1].GetTime();
+        }
+        else{
+            TVPHTimeText.text = "TVPHTime: N/A";
+        }
+        TVPairsSizeText.text = "TVPairs Size: " + tvpairs.Count;
+        ObjTrailSizeText.text = "ObjTrail Size: " + objectTrails.Count;
+        if(timeFrozen){
+            FrozenHeadTimeText.text = "FrozenHead Time: " + frozenHeadTime;
+        }
+        else{
+            FrozenHeadTimeText.text = "FrozenHead Time: N/A";
+        }
+    }
 }
