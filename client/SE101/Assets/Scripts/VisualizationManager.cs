@@ -51,31 +51,112 @@ public class VisualizationManager : MonoBehaviour {
     // 2 -> NE
     // 3 -> SE
     Vector3[] anchorPoints;
+    GameObject[] anchorPointMarkers;
 
     public GameObject anchorSelector;
     public Transform anchorPointMarker;
     public Transform originPointMarker;
     public Transform objectTrail;
 
+    public InputField websocketAddress;
+    public Text websocketServerStatus;
+
     public Slider timeSlider;
     public Button freezeTimeButton;
+
+    double visualizedTime = 0;
+    double frozenHeadTime = 0;
+
+    const string wsurl = "ws://localhost:8080";
+
+    WebSocket wsconn;
+
 
 	void Start(){
         objectTrails = new List<GameObject>();
         tvpairs = new List<TVPair>();
         anchorPoints = new Vector3[4];
+        anchorPointMarkers = new GameObject[4];
+
+        // Set server default address
+        websocketAddress.text = wsurl;
+
 	}
 
 
 	// Receive new position data from server and draw trails
 	void Update () {
-        if(!timeFrozen && tvpairs.Count>0){
+        UpdateDebugPanel();
+        if(wsconn !=null && wsconn.IsConnected){
+            websocketServerStatus.text = "Connection Status: Connected";
+            try{
+                GetPositionDataFromServer();
+            }
+            catch(Exception e){
+                
+            }
+        }
+        else{
+            websocketServerStatus.text = "Connection Status: Disconnected";
+        }
+        if (!timeFrozen && tvpairs.Count > 0)
+        {
+            // Display new data and update current time index
+            visualizedTime = tvpairs[tvpairs.Count - 1].GetTime();
             ChangeTrailDisplayRange(tvpairs.Count - 1);
         }
 	}
 
+	private void OnDestroy()
+	{
+        wsconn.Close();
+	}
+
+	public void BuildWebSocketsConnection(){
+        // Connect and set up websocket
+        wsconn = new WebSocket(websocketAddress.text);
+        wsconn.OnOpen += (sender, e) => {
+            Debug.Log("WebSocket connection opened!");
+        };
+
+        wsconn.OnMessage += (sender, e) => {
+            if (e.IsText)
+            {
+                string text = e.Data;
+                string retcode = text.Split(':')[0];
+
+                switch (retcode)
+                {
+                    case "curpos":
+                        Debug.Log("Received curpos!");
+                        break;
+                    case "all":
+                        Debug.Log("Received all!");
+                        break;
+                    case "predictland":
+                        Debug.Log("Received predictland!");
+                        break;
+                    case "predictpath":
+                        Debug.Log("Received predictpath!");
+                        break;
+                    case "error":
+                        Debug.Log("Received error!");
+                        break;
+                    default:
+                        Debug.Log("Error: Invalid retcode from server!");
+                        break;
+                }
+            }
+            else
+            {
+                Debug.Log("Error: Invalid data received from server!");
+            }
+        };
+        wsconn.Connect();
+    }
+
     void GetPositionDataFromServer(){
-        
+        wsconn.Send("curpos");
     }
 
     // 4 Anchor points are needed 
