@@ -11,9 +11,13 @@ void TrackedObject::add_pos(double time, Vector3 cur_pos){
     past_pos.push_back(pair);
 }
 
+// TODO: remove predict_landing_point() and predict_landing_deltatime() because they
+// don't make sense
 Vector3 TrackedObject::predict_landing_point(){
     /// Assume that x and z velocities will remain constant
     // Zero out y velocity, assume that y position is zero at landing point
+    // You can't zero out velocity. You must zero out height. Even then the
+    // coordinate system might not have an origin at y = 0
     Vector3 vel = get_velocity(0);
     vel.y = 0;
 
@@ -25,7 +29,7 @@ Vector3 TrackedObject::predict_landing_point(){
     return pred_pos;
 }
 
-double TrackedObject::predict_landing_deltatime(){
+double TrackedObject::predict_landing_deltatime(){ // This doesn't factor in the current y velocity
     double cur_y = past_pos[past_pos.size() - 1].second.y;
     double deltat = cur_y/grav;
     return deltat;
@@ -64,6 +68,20 @@ Vector3 TrackedObject::get_tpos(double abstime){
                                 std::make_pair(abstime, Vector3()),
                                 time_pos_compare))->second;
     return ppos;
+}
+
+double quadratic_formula(Vector3 v1, Vector3 cur_pos){
+  double a = 0.5*-grav;
+  double b = v1.y; // We are only interested in the y-component of the velocity
+  double c = -floor + cur_pos;
+
+  double discriminant = b*b - 4.0*a*c;
+  if(determinant < 0) throw std::logic_error("no solutions exist for the predicted time");
+  double ans1 = (-b + math.sqrt(discriminant))/(2.0*a);
+  double ans2 = (-b - math.sqrt(discriminant))/(2.0*a);
+  if(ans1 > 0) return ans1;
+  if(ans2 > 0) return ans2;
+  else std::cout<<"Found no answer to the prediction / you are already on the floor"<<std::endl;
 }
 
 
