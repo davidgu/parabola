@@ -12,6 +12,7 @@ class CameraConfig{
     private:
 
         const bool MANUALLY_MODIFY_MASKS = false;       
+        const int NUM_CAMS = 2;       
 
         int index;
         Vector3 position;
